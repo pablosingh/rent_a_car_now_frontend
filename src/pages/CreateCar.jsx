@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { FaArrowLeft, FaCar } from 'react-icons/fa'
+import { FaArrowLeft, FaCar, FaPlus, FaTrash } from 'react-icons/fa'
 
-const API_URL = 'http://localhost:8081/api/cars'
+const API_URL = '/api/cars'
 
 const emptyForm = {
   plate: '',
@@ -16,12 +16,56 @@ const emptyForm = {
 
 function CreateCar() {
   const [form, setForm] = useState(emptyForm)
+  const [images, setImages] = useState([])
+  const imagesRef = useRef(images)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState(null)
+
+  useEffect(() => {
+    imagesRef.current = images
+  }, [images])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
     setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
+  }
+
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files || []).filter((f) => f.type.startsWith('image/'))
+    setImages((prev) => [
+      ...prev,
+      ...files.map((file) => ({ file, preview: URL.createObjectURL(file) })),
+    ])
+    e.target.value = ''
+  }
+
+  const removeImage = (index) => {
+    setImages((prev) => {
+      const next = [...prev]
+      URL.revokeObjectURL(next[index].preview)
+      next.splice(index, 1)
+      return next
+    })
+  }
+
+  useEffect(() => {
+    return () => imagesRef.current.forEach((img) => URL.revokeObjectURL(img.preview))
+  }, [])
+
+  const uploadImages = async (plate) => {
+    const failures = []
+    for (const img of images) {
+      const fd = new FormData()
+      fd.append('file', img.file)
+      try {
+        const res = await fetch(`${API_URL}/${plate}/images`, { method: 'POST', body: fd })
+        const body = await res.json()
+        if (!res.ok || (body && body.status && body.status >= 400)) throw new Error()
+      } catch {
+        failures.push(img.file.name)
+      }
+    }
+    return failures
   }
 
   const handleSubmit = async (e) => {
@@ -47,8 +91,19 @@ function CreateCar() {
         throw new Error(body.message || 'Hubo un error al crear el auto.')
       }
 
-      setMessage({ type: 'success', text: 'Auto creado correctamente.' })
+      const failures = await uploadImages(body.data.plate)
+
+      if (failures.length === 0) {
+        setMessage({ type: 'success', text: 'Auto creado correctamente.' })
+      } else {
+        setMessage({
+          type: 'error',
+          text: `Auto creado, pero ${failures.length} imagen(es) no se subieron: ${failures.join(', ')}`,
+        })
+      }
       setForm(emptyForm)
+      images.forEach((img) => URL.revokeObjectURL(img.preview))
+      setImages([])
     } catch (err) {
       setMessage({ type: 'error', text: err.message })
     } finally {
@@ -122,6 +177,37 @@ function CreateCar() {
             />
             Disponible
           </label>
+
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Fotos</label>
+            <label className="flex flex-col items-center justify-center gap-2 w-full px-4 py-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-pointer hover:border-violet-400 hover:text-violet-500 transition">
+              <FaPlus className="text-2xl" />
+              <span className="text-sm">Agregar fotos (máx. varias)</span>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageChange}
+                className="hidden"
+              />
+            </label>
+            {images.length > 0 && (
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-4">
+                {images.map((img, index) => (
+                  <div key={img.preview} className="relative group rounded-lg overflow-hidden border border-gray-200">
+                    <img src={img.preview} alt={`Foto ${index + 1}`} className="w-full h-24 object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute top-1 right-1 p-1.5 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                    >
+                      <FaTrash className="text-xs" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div className="sm:col-span-2">
             <button
