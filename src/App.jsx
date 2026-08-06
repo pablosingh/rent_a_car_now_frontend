@@ -11,7 +11,7 @@ function App() {
       <main className="p-4 md:p-8 pt-[180px] md:pt-[180px]">
         <Routes>
           <Route path="/" element={<CarGrid />} />
-          <Route path="/car/:id" element={<CarDetail />} />
+          <Route path="/car/:plate" element={<CarDetail />} />
           <Route path="/crear" element={<CreateCar />} />
         </Routes>
       </main>
