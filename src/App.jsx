@@ -8,7 +8,7 @@ function App() {
   return (
     <>
       <Header />
-      <main className="p-4 md:p-8 pt-[180px] md:pt-[180px]">
+      <main className="p-4 md:p-8 pt-[60px] md:pt-[60px]">
         <Routes>
           <Route path="/" element={<CarGrid />} />
           <Route path="/car/:plate" element={<CarDetail />} />
