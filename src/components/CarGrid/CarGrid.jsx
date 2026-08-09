@@ -12,6 +12,15 @@ const fetchCarsPage = async (page) => {
   return body.data
 }
 
+const fetchRandomCars = async () => {
+  const res = await fetch(`/api/cars/random?limit=${PAGE_SIZE}&available=true`)
+  const body = await res.json()
+  if (!res.ok || (body && body.status && body.status >= 400)) {
+    throw new Error(body.message || 'Hubo un error al cargar los autos.')
+  }
+  return body.data
+}
+
 function CarGrid() {
   const [cars, setCars] = useState([])
   const [page, setPage] = useState(0)
@@ -22,12 +31,12 @@ function CarGrid() {
 
   useEffect(() => {
     let active = true
-    fetchCarsPage(0)
+    fetchRandomCars()
       .then((data) => {
         if (!active) return
-        setCars(data.content)
-        setPage(data.page)
-        setHasNext(data.hasNext)
+        setCars(data)
+        setPage(-1)
+        setHasNext(data.length === PAGE_SIZE)
       })
       .catch((err) => {
         if (active) setError(err.message)
@@ -46,7 +55,7 @@ function CarGrid() {
     setError(null)
     try {
       const data = await fetchCarsPage(nextPage)
-      setCars((prev) => [...prev, ...data.content])
+      setCars((prev) => [...prev, ...data.content.filter((c) => !prev.some((p) => p.id === c.id))])
       setPage(data.page)
       setHasNext(data.hasNext)
     } catch (err) {
@@ -59,11 +68,11 @@ function CarGrid() {
   const handleRetry = () => {
     setLoading(true)
     setError(null)
-    fetchCarsPage(0)
+    fetchRandomCars()
       .then((data) => {
-        setCars(data.content)
-        setPage(data.page)
-        setHasNext(data.hasNext)
+        setCars(data)
+        setPage(-1)
+        setHasNext(data.length === PAGE_SIZE)
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
