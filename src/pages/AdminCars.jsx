@@ -4,28 +4,32 @@ import { FaArrowLeft, FaEdit, FaTrash, FaCar } from 'react-icons/fa'
 import AdminOnly from '../components/AdminOnly/AdminOnly'
 
 const API_URL = '/api/cars'
-const PAGE_SIZE = 50
+const PAGE_SIZE = 10
 
-const fetchCars = async () => {
-  const res = await fetch(`${API_URL}?page=0&size=${PAGE_SIZE}`)
+const fetchCars = async (page) => {
+  const res = await fetch(`${API_URL}?page=${page}&size=${PAGE_SIZE}`)
   const body = await res.json()
   if (!res.ok || (body && body.status && body.status >= 400)) {
     throw new Error(body.message || 'Hubo un error al cargar los autos.')
   }
-  return body.data.content
+  return body.data
 }
 
 function AdminCars() {
   const [cars, setCars] = useState([])
+  const [currentPage, setCurrentPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     let active = true
-    fetchCars()
+    fetchCars(currentPage)
       .then((data) => {
-        if (active) setCars(data)
+        if (!active) return
+        setCars(data.content)
+        setTotalPages(data.totalPages)
       })
       .catch((err) => {
         if (active) setError(err.message)
@@ -36,13 +40,21 @@ function AdminCars() {
     return () => {
       active = false
     }
-  }, [])
+  }, [currentPage])
+
+  const handleGoTo = (targetPage) => {
+    if (targetPage < 0 || targetPage >= totalPages || targetPage === currentPage) return
+    setCurrentPage(targetPage)
+  }
 
   const handleRetry = () => {
     setLoading(true)
     setError(null)
-    fetchCars()
-      .then(setCars)
+    fetchCars(currentPage)
+      .then((data) => {
+        setCars(data.content)
+        setTotalPages(data.totalPages)
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
   }
@@ -55,7 +67,11 @@ function AdminCars() {
       if (!res.ok || (body && body.status && body.status >= 400)) {
         throw new Error(body.message || 'Hubo un error al borrar el auto.')
       }
-      setCars((prev) => prev.filter((c) => c.id !== car.id))
+      if (cars.length === 1 && currentPage > 0) {
+        setCurrentPage((prev) => prev - 1)
+      } else {
+        setCars((prev) => prev.filter((c) => c.id !== car.id))
+      }
     } catch (err) {
       window.alert(err.message)
     } finally {
@@ -157,6 +173,39 @@ function AdminCars() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {!loading && !error && totalPages > 0 && (
+        <div className="flex flex-wrap items-center justify-center gap-1 mt-10">
+          <button
+            onClick={() => handleGoTo(currentPage - 1)}
+            disabled={currentPage === 0 || loading}
+            className="px-3 py-2 text-sm font-semibold rounded-lg border-2 border-violet-500 text-violet-500 hover:bg-violet-50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Anterior
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i).map((n) => (
+            <button
+              key={n}
+              onClick={() => handleGoTo(n)}
+              disabled={loading}
+              className={`px-3 py-2 text-sm font-semibold rounded-lg cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                n === currentPage
+                  ? 'bg-violet-500 text-white'
+                  : 'border-2 border-violet-500 text-violet-500 hover:bg-violet-50'
+              }`}
+            >
+              {n + 1}
+            </button>
+          ))}
+          <button
+            onClick={() => handleGoTo(currentPage + 1)}
+            disabled={currentPage === totalPages - 1 || loading}
+            className="px-3 py-2 text-sm font-semibold rounded-lg border-2 border-violet-500 text-violet-500 hover:bg-violet-50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Siguiente
+          </button>
         </div>
       )}
     </section>
