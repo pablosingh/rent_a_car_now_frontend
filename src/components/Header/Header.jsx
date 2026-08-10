@@ -67,12 +67,6 @@ function Header() {
             Home
           </Link>
           <Link
-            to="/crear"
-            className="px-4 py-1.5 text-sm font-semibold rounded border-2 border-violet-500 text-violet-500 hover:bg-violet-50 cursor-pointer"
-          >
-            Crear auto
-          </Link>
-          <Link
             to="/admin"
             className="px-4 py-1.5 text-sm font-semibold rounded border-2 border-violet-500 text-violet-500 hover:bg-violet-50 cursor-pointer"
           >
