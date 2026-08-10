@@ -23,8 +23,8 @@ const fetchRandomCars = async () => {
 
 function CarGrid() {
   const [cars, setCars] = useState([])
-  const [page, setPage] = useState(0)
-  const [hasNext, setHasNext] = useState(false)
+  const [totalPages, setTotalPages] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState(null)
@@ -35,11 +35,16 @@ function CarGrid() {
       .then((data) => {
         if (!active) return
         setCars(data)
-        setPage(-1)
-        setHasNext(data.length === PAGE_SIZE)
+        setCurrentPage(1)
       })
       .catch((err) => {
         if (active) setError(err.message)
+      })
+      .then(() => {
+        if (active) return fetchCarsPage(0).then((meta) => setTotalPages(meta.totalPages))
+      })
+      .catch(() => {
+        if (active) setTotalPages(0)
       })
       .finally(() => {
         if (active) setLoading(false)
@@ -49,15 +54,21 @@ function CarGrid() {
     }
   }, [])
 
-  const handleLoadMore = async () => {
-    const nextPage = page + 1
+  const handleGoTo = async (targetPage) => {
+    const totalDisplayed = totalPages + 1
+    if (targetPage < 1 || targetPage > totalDisplayed || loadingMore) return
+    if (targetPage === currentPage) return
     setLoadingMore(true)
     setError(null)
     try {
-      const data = await fetchCarsPage(nextPage)
-      setCars((prev) => [...prev, ...data.content.filter((c) => !prev.some((p) => p.id === c.id))])
-      setPage(data.page)
-      setHasNext(data.hasNext)
+      if (targetPage === 1) {
+        setCars(await fetchRandomCars())
+      } else {
+        const data = await fetchCarsPage(targetPage - 2)
+        setCars(data.content)
+        setTotalPages(data.totalPages)
+      }
+      setCurrentPage(targetPage)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -71,10 +82,11 @@ function CarGrid() {
     fetchRandomCars()
       .then((data) => {
         setCars(data)
-        setPage(-1)
-        setHasNext(data.length === PAGE_SIZE)
+        setCurrentPage(1)
       })
       .catch((err) => setError(err.message))
+      .then(() => fetchCarsPage(0).then((meta) => setTotalPages(meta.totalPages)))
+      .catch(() => setTotalPages(0))
       .finally(() => setLoading(false))
   }
 
@@ -114,14 +126,35 @@ function CarGrid() {
             ))}
           </div>
 
-          {hasNext && (
-            <div className="flex justify-center mt-10">
+          {totalPages > 0 && (
+            <div className="flex flex-wrap items-center justify-center gap-1 mt-10">
               <button
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-                className="px-8 py-3 text-lg font-semibold rounded-lg bg-violet-500 text-white hover:bg-violet-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => handleGoTo(currentPage - 1)}
+                disabled={currentPage === 1 || loadingMore}
+                className="px-3 py-2 text-sm font-semibold rounded-lg border-2 border-violet-500 text-violet-500 hover:bg-violet-50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {loadingMore ? 'Cargando...' : 'Cargar más'}
+                Anterior
+              </button>
+              {Array.from({ length: totalPages + 1 }, (_, i) => i + 1).map((n) => (
+                <button
+                  key={n}
+                  onClick={() => handleGoTo(n)}
+                  disabled={loadingMore}
+                  className={`px-3 py-2 text-sm font-semibold rounded-lg cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                    n === currentPage
+                      ? 'bg-violet-500 text-white'
+                      : 'border-2 border-violet-500 text-violet-500 hover:bg-violet-50'
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+              <button
+                onClick={() => handleGoTo(currentPage + 1)}
+                disabled={currentPage === totalPages + 1 || loadingMore}
+                className="px-3 py-2 text-sm font-semibold rounded-lg border-2 border-violet-500 text-violet-500 hover:bg-violet-50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Siguiente
               </button>
             </div>
           )}
