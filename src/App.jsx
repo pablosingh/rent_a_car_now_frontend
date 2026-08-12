@@ -8,6 +8,8 @@ import Admin from './pages/Admin'
 import AdminCars from './pages/AdminCars'
 import AdminCarEdit from './pages/AdminCarEdit'
 import AdminReservations from './pages/AdminReservations'
+import Register from './pages/Register'
+import Login from './pages/Login'
 
 function App() {
   return (
@@ -18,6 +20,8 @@ function App() {
           <Route path="/" element={<CarGrid />} />
           <Route path="/car/:plate" element={<CarDetail />} />
           <Route path="/crear" element={<CreateCar />} />
+          <Route path="/registro" element={<Register />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/cars" element={<AdminCars />} />
           <Route path="/admin/cars/:plate" element={<CarDetail admin />} />

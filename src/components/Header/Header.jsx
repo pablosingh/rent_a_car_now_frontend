@@ -21,12 +21,18 @@ function Header() {
             <span className="text-sm text-gray-400 ml-1 hidden sm:inline">Tu viaje empieza aquí</span>
           </Link>
           <nav className="flex gap-2">
-            <button className="px-4 py-1.5 text-sm font-semibold rounded border-2 border-violet-500 text-violet-500 hover:bg-violet-50 cursor-pointer">
+            <Link
+              to="/registro"
+              className="px-4 py-1.5 text-sm font-semibold rounded border-2 border-violet-500 text-violet-500 hover:bg-violet-50 cursor-pointer"
+            >
               Crear cuenta
-            </button>
-            <button className="px-4 py-1.5 text-sm font-semibold rounded border-2 border-violet-500 bg-violet-500 text-white hover:bg-violet-700 cursor-pointer">
+            </Link>
+            <Link
+              to="/login"
+              className="px-4 py-1.5 text-sm font-semibold rounded border-2 border-violet-500 bg-violet-500 text-white hover:bg-violet-700 cursor-pointer"
+            >
               Iniciar sesión
-            </button>
+            </Link>
           </nav>
         </div>
 
