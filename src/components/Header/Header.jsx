@@ -1,14 +1,22 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { FaCar, FaSearch } from 'react-icons/fa'
+import { useAuth } from '../../context/AuthContext'
 
 function Header() {
+  const navigate = useNavigate()
+  const { auth, logout } = useAuth()
   const [searchText, setSearchText] = useState('')
   const [pickupDate, setPickupDate] = useState('')
   const [dropoffDate, setDropoffDate] = useState('')
 
   const handleSearch = () => {
     console.log({ searchText, pickupDate, dropoffDate })
+  }
+
+  const handleLogout = () => {
+    logout()
+    navigate('/')
   }
 
   return (
@@ -21,18 +29,34 @@ function Header() {
             <span className="text-sm text-gray-400 ml-1 hidden sm:inline">Tu viaje empieza aquí</span>
           </Link>
           <nav className="flex gap-2">
-            <Link
-              to="/registro"
-              className="px-4 py-1.5 text-sm font-semibold rounded border-2 border-violet-500 text-violet-500 hover:bg-violet-50 cursor-pointer"
-            >
-              Crear cuenta
-            </Link>
-            <Link
-              to="/login"
-              className="px-4 py-1.5 text-sm font-semibold rounded border-2 border-violet-500 bg-violet-500 text-white hover:bg-violet-700 cursor-pointer"
-            >
-              Iniciar sesión
-            </Link>
+            {auth?.user ? (
+              <>
+                <span className="px-4 py-1.5 text-sm font-semibold rounded border-2 border-gray-300 text-gray-700">
+                  {auth.user.name} {auth.user.lastName}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-1.5 text-sm font-semibold rounded border-2 border-violet-500 text-violet-500 hover:bg-violet-50 cursor-pointer"
+                >
+                  Cerrar sesión
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/registro"
+                  className="px-4 py-1.5 text-sm font-semibold rounded border-2 border-violet-500 text-violet-500 hover:bg-violet-50 cursor-pointer"
+                >
+                  Crear cuenta
+                </Link>
+                <Link
+                  to="/login"
+                  className="px-4 py-1.5 text-sm font-semibold rounded border-2 border-violet-500 bg-violet-500 text-white hover:bg-violet-700 cursor-pointer"
+                >
+                  Iniciar sesión
+                </Link>
+              </>
+            )}
           </nav>
         </div>
 

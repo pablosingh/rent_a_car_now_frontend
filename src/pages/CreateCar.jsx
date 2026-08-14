@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FaArrowLeft, FaCar, FaPlus, FaTrash } from 'react-icons/fa'
+import { useAuth } from '../context/AuthContext'
 
 const API_URL = '/api/cars'
 
@@ -15,6 +16,7 @@ const emptyForm = {
 }
 
 function CreateCar() {
+  const { authFetch } = useAuth()
   const [form, setForm] = useState(emptyForm)
   const [images, setImages] = useState([])
   const imagesRef = useRef(images)
@@ -58,7 +60,7 @@ function CreateCar() {
       const fd = new FormData()
       fd.append('file', img.file)
       try {
-        const res = await fetch(`${API_URL}/${plate}/images`, { method: 'POST', body: fd })
+        const res = await authFetch(`${API_URL}/${plate}/images`, { method: 'POST', body: fd })
         const body = await res.json()
         if (!res.ok || (body && body.status && body.status >= 400)) throw new Error()
       } catch {
@@ -74,7 +76,7 @@ function CreateCar() {
     setMessage(null)
 
     try {
-      const res = await fetch(API_URL, {
+      const res = await authFetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

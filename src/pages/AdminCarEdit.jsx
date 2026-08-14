@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { FaArrowLeft, FaCar } from 'react-icons/fa'
 import AdminOnly from '../components/AdminOnly/AdminOnly'
+import { useAuth } from '../context/AuthContext'
 
 const API_URL = '/api/cars'
 
 function AdminCarEdit() {
   const { plate } = useParams()
   const navigate = useNavigate()
+  const { authFetch } = useAuth()
 
   const [form, setForm] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -53,7 +55,7 @@ function AdminCarEdit() {
         pricePerHour: Number(form.pricePerHour),
         available: form.available,
       })
-      const res = await fetch(`${API_URL}/${plate}?${params}`, { method: 'PUT' })
+      const res = await authFetch(`${API_URL}/${plate}?${params}`, { method: 'PUT' })
       const body = await res.json()
       if (!res.ok || (body && body.status && body.status >= 400)) {
         throw new Error(body.message || 'Hubo un error al actualizar el auto.')

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FaArrowLeft, FaEdit, FaTrash, FaCar } from 'react-icons/fa'
 import AdminOnly from '../components/AdminOnly/AdminOnly'
+import { useAuth } from '../context/AuthContext'
 
 const API_URL = '/api/cars'
 const PAGE_SIZE = 10
@@ -16,6 +17,7 @@ const fetchCars = async (page) => {
 }
 
 function AdminCars() {
+  const { authFetch } = useAuth()
   const [cars, setCars] = useState([])
   const [currentPage, setCurrentPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
@@ -62,7 +64,7 @@ function AdminCars() {
     if (!window.confirm(`¿Seguro que querés borrar ${car.brand} ${car.model} (${car.plate})?`)) return
     setDeleting(true)
     try {
-      const res = await fetch(`${API_URL}/${car.id}`, { method: 'DELETE' })
+      const res = await authFetch(`${API_URL}/${car.id}`, { method: 'DELETE' })
       const body = await res.json()
       if (!res.ok || (body && body.status && body.status >= 400)) {
         throw new Error(body.message || 'Hubo un error al borrar el auto.')
