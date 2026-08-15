@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FaArrowLeft, FaCar, FaPlus, FaTrash } from 'react-icons/fa'
 import { useAuth } from '../context/AuthContext'
+import { CATEGORIES } from '../constants/categories'
 
 const API_URL = '/api/cars'
 
@@ -12,6 +13,7 @@ const emptyForm = {
   year: '',
   pricePerDay: '',
   pricePerHour: '',
+  category: '',
   available: true,
 }
 
@@ -168,6 +170,15 @@ function CreateCar() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Precio por hora</label>
             <input name="pricePerHour" type="number" step="0.01" value={form.pricePerHour} onChange={handleChange} required className={inputClass} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+            <select name="category" value={form.category} onChange={handleChange} required className={inputClass}>
+              <option value="">Seleccioná una categoría</option>
+              {CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
           </div>
           <label className="flex items-center gap-2 col-span-1 sm:col-span-2 text-sm font-medium text-gray-700 cursor-pointer">
             <input

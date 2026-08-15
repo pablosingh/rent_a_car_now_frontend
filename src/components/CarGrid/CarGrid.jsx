@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react'
 import CarCard from '../CarCard/CarCard'
+import { CATEGORIES } from '../../constants/categories'
 
 const PAGE_SIZE = 10
 
-const fetchCarsPage = async (page) => {
-  const res = await fetch(`/api/cars?page=${page}&size=${PAGE_SIZE}&available=true`)
+const buildCategoryParam = (category) =>
+  category ? `&category=${encodeURIComponent(category)}` : ''
+
+const fetchCarsPage = async (page, category) => {
+  const res = await fetch(`/api/cars?page=${page}&size=${PAGE_SIZE}&available=true${buildCategoryParam(category)}`)
   const body = await res.json()
   if (!res.ok || (body && body.status && body.status >= 400)) {
     throw new Error(body.message || 'Hubo un error al cargar los autos.')
@@ -12,8 +16,8 @@ const fetchCarsPage = async (page) => {
   return body.data
 }
 
-const fetchRandomCars = async () => {
-  const res = await fetch(`/api/cars/random?limit=${PAGE_SIZE}&available=true`)
+const fetchRandomCars = async (category) => {
+  const res = await fetch(`/api/cars/random?limit=${PAGE_SIZE}&available=true${buildCategoryParam(category)}`)
   const body = await res.json()
   if (!res.ok || (body && body.status && body.status >= 400)) {
     throw new Error(body.message || 'Hubo un error al cargar los autos.')
@@ -25,13 +29,14 @@ function CarGrid() {
   const [cars, setCars] = useState([])
   const [totalPages, setTotalPages] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
+  const [category, setCategory] = useState('')
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState(null)
 
   useEffect(() => {
     let active = true
-    fetchRandomCars()
+    fetchRandomCars(category)
       .then((data) => {
         if (!active) return
         setCars(data)
@@ -41,7 +46,7 @@ function CarGrid() {
         if (active) setError(err.message)
       })
       .then(() => {
-        if (active) return fetchCarsPage(0).then((meta) => setTotalPages(meta.totalPages))
+        if (active) return fetchCarsPage(0, category).then((meta) => setTotalPages(meta.totalPages))
       })
       .catch(() => {
         if (active) setTotalPages(0)
@@ -52,7 +57,7 @@ function CarGrid() {
     return () => {
       active = false
     }
-  }, [])
+  }, [category])
 
   const handleGoTo = async (targetPage) => {
     const totalDisplayed = totalPages + 1
@@ -62,9 +67,9 @@ function CarGrid() {
     setError(null)
     try {
       if (targetPage === 1) {
-        setCars(await fetchRandomCars())
+        setCars(await fetchRandomCars(category))
       } else {
-        const data = await fetchCarsPage(targetPage - 2)
+        const data = await fetchCarsPage(targetPage - 2, category)
         setCars(data.content)
         setTotalPages(data.totalPages)
       }
@@ -79,13 +84,13 @@ function CarGrid() {
   const handleRetry = () => {
     setLoading(true)
     setError(null)
-    fetchRandomCars()
+    fetchRandomCars(category)
       .then((data) => {
         setCars(data)
         setCurrentPage(1)
       })
       .catch((err) => setError(err.message))
-      .then(() => fetchCarsPage(0).then((meta) => setTotalPages(meta.totalPages)))
+      .then(() => fetchCarsPage(0, category).then((meta) => setTotalPages(meta.totalPages)))
       .catch(() => setTotalPages(0))
       .finally(() => setLoading(false))
   }
@@ -95,6 +100,19 @@ function CarGrid() {
       <h2 className="text-2xl font-bold text-gray-800 mb-6">
         Nuestros autos
       </h2>
+
+      <div className="mb-6">
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-violet-400 cursor-pointer"
+        >
+          <option value="">Todas las categorías</option>
+          {CATEGORIES.map((cat) => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
+      </div>
 
       {loading && (
         <p className="text-gray-500 text-center py-16">Cargando autos...</p>

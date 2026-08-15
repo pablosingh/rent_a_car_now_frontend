@@ -3,12 +3,16 @@ import { Link } from 'react-router-dom'
 import { FaArrowLeft, FaEdit, FaTrash, FaCar } from 'react-icons/fa'
 import AdminOnly from '../components/AdminOnly/AdminOnly'
 import { useAuth } from '../context/AuthContext'
+import { CATEGORIES } from '../constants/categories'
 
 const API_URL = '/api/cars'
 const PAGE_SIZE = 10
 
-const fetchCars = async (page) => {
-  const res = await fetch(`${API_URL}?page=${page}&size=${PAGE_SIZE}`)
+const buildCategoryParam = (category) =>
+  category ? `&category=${encodeURIComponent(category)}` : ''
+
+const fetchCars = async (page, category) => {
+  const res = await fetch(`${API_URL}?page=${page}&size=${PAGE_SIZE}${buildCategoryParam(category)}`)
   const body = await res.json()
   if (!res.ok || (body && body.status && body.status >= 400)) {
     throw new Error(body.message || 'Hubo un error al cargar los autos.')
@@ -21,13 +25,14 @@ function AdminCars() {
   const [cars, setCars] = useState([])
   const [currentPage, setCurrentPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
+  const [category, setCategory] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     let active = true
-    fetchCars(currentPage)
+    fetchCars(currentPage, category)
       .then((data) => {
         if (!active) return
         setCars(data.content)
@@ -42,7 +47,12 @@ function AdminCars() {
     return () => {
       active = false
     }
-  }, [currentPage])
+  }, [currentPage, category])
+
+  const handleCategoryChange = (value) => {
+    setCategory(value)
+    setCurrentPage(0)
+  }
 
   const handleGoTo = (targetPage) => {
     if (targetPage < 0 || targetPage >= totalPages || targetPage === currentPage) return
@@ -52,7 +62,7 @@ function AdminCars() {
   const handleRetry = () => {
     setLoading(true)
     setError(null)
-    fetchCars(currentPage)
+    fetchCars(currentPage, category)
       .then((data) => {
         setCars(data.content)
         setTotalPages(data.totalPages)
@@ -93,6 +103,19 @@ function AdminCars() {
       </Link>
 
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Lista de Autos</h2>
+
+      <div className="mb-6">
+        <select
+          value={category}
+          onChange={(e) => handleCategoryChange(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-violet-400 cursor-pointer"
+        >
+          <option value="">Todas las categorías</option>
+          {CATEGORIES.map((cat) => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
+      </div>
 
       {loading && <p className="text-gray-500 text-center py-16">Cargando autos...</p>}
 
@@ -150,6 +173,11 @@ function AdminCars() {
                   </span>
                 </div>
                 <p className="text-gray-500 text-xs">{car.year}</p>
+                {car.category && (
+                  <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 self-start">
+                    {car.category}
+                  </span>
+                )}
                 <p className="text-violet-600 font-semibold text-sm">
                   ${car.pricePerDay}
                   <span className="text-[10px] text-gray-500 font-normal"> /día</span>

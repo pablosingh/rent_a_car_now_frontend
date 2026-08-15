@@ -3,6 +3,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom'
 import { FaArrowLeft, FaCar } from 'react-icons/fa'
 import AdminOnly from '../components/AdminOnly/AdminOnly'
 import { useAuth } from '../context/AuthContext'
+import { CATEGORIES } from '../constants/categories'
 
 const API_URL = '/api/cars'
 
@@ -25,8 +26,8 @@ function AdminCarEdit() {
       .then((body) => {
         if (!active) return
         if (!resOk(body)) throw new Error(body.message || 'Hubo un error al cargar el auto.')
-        const { brand, model, year, pricePerDay, pricePerHour, available } = body.data
-        setForm({ brand, model, year, pricePerDay, pricePerHour, available })
+        const { brand, model, year, pricePerDay, pricePerHour, available, category } = body.data
+        setForm({ brand, model, year, pricePerDay, pricePerHour, available, category: category || '' })
       })
       .catch((err) => setMessage({ type: 'error', text: err.message }))
       .finally(() => {
@@ -54,6 +55,7 @@ function AdminCarEdit() {
         pricePerDay: Number(form.pricePerDay),
         pricePerHour: Number(form.pricePerHour),
         available: form.available,
+        category: form.category,
       })
       const res = await authFetch(`${API_URL}/${plate}?${params}`, { method: 'PUT' })
       const body = await res.json()
@@ -127,6 +129,15 @@ function AdminCarEdit() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Precio por hora</label>
               <input name="pricePerHour" type="number" step="0.01" value={form.pricePerHour} onChange={handleChange} required className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+              <select name="category" value={form.category} onChange={handleChange} required className={inputClass}>
+                <option value="">Seleccioná una categoría</option>
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
             </div>
             <label className="flex items-center gap-2 col-span-2 text-sm font-medium text-gray-700 cursor-pointer">
               <input
