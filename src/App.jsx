@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import Header from './components/Header/Header'
 import Footer from './components/Footer/Footer'
+import RequireAuth from './components/RequireAuth/RequireAuth'
 import CarGrid from './components/CarGrid/CarGrid'
 import CarDetail from './pages/CarDetail'
 import CreateCar from './pages/CreateCar'
@@ -10,6 +11,7 @@ import AdminCarEdit from './pages/AdminCarEdit'
 import AdminReservations from './pages/AdminReservations'
 import Register from './pages/Register'
 import Login from './pages/Login'
+import Profile from './pages/Profile'
 
 function App() {
   return (
@@ -19,14 +21,15 @@ function App() {
         <Routes>
           <Route path="/" element={<CarGrid />} />
           <Route path="/car/:plate" element={<CarDetail />} />
-          <Route path="/crear" element={<CreateCar />} />
+          <Route path="/crear" element={<RequireAuth admin><CreateCar /></RequireAuth>} />
           <Route path="/registro" element={<Register />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/admin/cars" element={<AdminCars />} />
-          <Route path="/admin/cars/:plate" element={<CarDetail admin />} />
-          <Route path="/admin/cars/:plate/edit" element={<AdminCarEdit />} />
-          <Route path="/admin/reservations" element={<AdminReservations />} />
+          <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
+          <Route path="/admin" element={<RequireAuth admin><Admin /></RequireAuth>} />
+          <Route path="/admin/cars" element={<RequireAuth admin><AdminCars /></RequireAuth>} />
+          <Route path="/admin/cars/:plate" element={<RequireAuth admin><CarDetail admin /></RequireAuth>} />
+          <Route path="/admin/cars/:plate/edit" element={<RequireAuth admin><AdminCarEdit /></RequireAuth>} />
+          <Route path="/admin/reservations" element={<RequireAuth admin><AdminReservations /></RequireAuth>} />
         </Routes>
       </main>
       <Footer />

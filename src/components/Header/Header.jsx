@@ -31,9 +31,12 @@ function Header() {
           <nav className="flex gap-2">
             {auth?.user ? (
               <>
-                <span className="px-4 py-1.5 text-sm font-semibold rounded border-2 border-gray-300 text-gray-700">
+                <Link
+                  to="/profile"
+                  className="px-4 py-1.5 text-sm font-semibold rounded border-2 border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer"
+                >
                   {auth.user.name} {auth.user.lastName}
-                </span>
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="px-4 py-1.5 text-sm font-semibold rounded border-2 border-violet-500 text-violet-500 hover:bg-violet-50 cursor-pointer"
