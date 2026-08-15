@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { FaArrowLeft, FaCalendar, FaCar, FaCheckCircle, FaEdit, FaTimesCircle, FaTrash } from 'react-icons/fa'
 import AdminOnly from '../components/AdminOnly/AdminOnly'
+import { useAuth } from '../context/AuthContext'
 
 function CarDetail({ admin = false }) {
   const { plate } = useParams()
   const navigate = useNavigate()
+  const { authFetch } = useAuth()
   const [car, setCar] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -37,7 +39,7 @@ function CarDetail({ admin = false }) {
     if (!window.confirm(`¿Seguro que querés borrar ${car.brand} ${car.model} (${car.plate})?`)) return
     setDeleting(true)
     try {
-      const res = await fetch(`/api/cars/${car.id}`, { method: 'DELETE' })
+      const res = await authFetch(`/api/cars/${car.id}`, { method: 'DELETE' })
       const body = await res.json()
       if (!res.ok || (body && body.status && body.status >= 400)) {
         throw new Error(body.message || 'Hubo un error al borrar el auto.')
