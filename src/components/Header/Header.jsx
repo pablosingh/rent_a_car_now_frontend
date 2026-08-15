@@ -33,9 +33,21 @@ function Header() {
               <>
                 <Link
                   to="/profile"
-                  className="px-4 py-1.5 text-sm font-semibold rounded border-2 border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer"
+                  title={`${auth.user.name} ${auth.user.lastName}`}
+                  className="w-9 h-9 rounded-full border-2 border-gray-300 hover:border-violet-400 overflow-hidden shrink-0 cursor-pointer"
                 >
-                  {auth.user.name} {auth.user.lastName}
+                  {auth.user.photoPath ? (
+                    <img
+                      src={auth.user.photoPath}
+                      alt={`${auth.user.name} ${auth.user.lastName}`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="w-full h-full bg-violet-500 text-white flex items-center justify-center text-xs font-bold">
+                      {auth.user.name.charAt(0).toUpperCase()}
+                      {auth.user.lastName.charAt(0).toUpperCase()}
+                    </span>
+                  )}
                 </Link>
                 <button
                   onClick={handleLogout}

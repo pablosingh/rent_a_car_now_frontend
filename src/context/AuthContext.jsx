@@ -27,6 +27,12 @@ export function AuthProvider({ children }) {
     setAuth(null)
   }
 
+  const setUser = (user) => {
+    const next = { token: auth?.token, user }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    setAuth(next)
+  }
+
   const authFetch = async (url, options = {}) => {
     const headers = new Headers(options.headers || {})
     if (auth?.token) {
@@ -36,7 +42,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ auth, login, logout, authFetch }}>
+    <AuthContext.Provider value={{ auth, login, logout, setUser, authFetch }}>
       {children}
     </AuthContext.Provider>
   )
