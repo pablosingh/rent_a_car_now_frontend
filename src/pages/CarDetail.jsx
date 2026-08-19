@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext'
 function CarDetail({ admin = false }) {
   const { plate } = useParams()
   const navigate = useNavigate()
-  const { authFetch } = useAuth()
+  const { auth, authFetch } = useAuth()
   const [car, setCar] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -181,7 +181,7 @@ function CarDetail({ admin = false }) {
 
           {!admin && (
             <button
-              disabled={!car.available}
+              disabled={!car.available || !auth?.user}
               className="mt-8 w-full md:w-auto px-8 py-3 text-lg font-semibold rounded-lg bg-violet-500 text-white hover:bg-violet-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Reservar ahora
