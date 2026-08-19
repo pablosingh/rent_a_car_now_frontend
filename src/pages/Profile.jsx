@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FaCamera, FaShieldAlt, FaSignOutAlt, FaUser } from 'react-icons/fa'
+import { FaCamera, FaShieldAlt, FaSignOutAlt, FaTrashAlt, FaUser } from 'react-icons/fa'
 import { useAuth } from '../context/AuthContext'
 
 function Profile() {
@@ -31,6 +31,25 @@ function Profile() {
       }
       setUser(body.data)
       setMessage({ type: 'success', text: 'Foto de perfil actualizada.' })
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message })
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleDeletePhoto = async () => {
+    if (!window.confirm('¿Eliminar tu foto de perfil?')) return
+    setUploading(true)
+    setMessage(null)
+    try {
+      const res = await authFetch(`/api/users/${auth.user.id}/photo`, { method: 'DELETE' })
+      const body = await res.json()
+      if (!res.ok || (body && body.status && body.status >= 400)) {
+        throw new Error(body.message || 'Hubo un error al eliminar la foto.')
+      }
+      setUser(body.data)
+      setMessage({ type: 'success', text: 'Foto de perfil eliminada.' })
     } catch (err) {
       setMessage({ type: 'error', text: err.message })
     } finally {
@@ -103,6 +122,17 @@ function Profile() {
             <FaSignOutAlt />
             Cerrar sesión
           </button>
+
+          {auth.user.photoPath && (
+            <button
+              onClick={handleDeletePhoto}
+              disabled={uploading}
+              className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg border-2 border-gray-300 text-gray-500 hover:border-red-400 hover:text-red-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FaTrashAlt />
+              Eliminar foto
+            </button>
+          )}
         </div>
       </div>
     </div>

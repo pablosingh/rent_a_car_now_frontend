@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { FaArrowLeft, FaUser } from 'react-icons/fa'
+import { FaArrowLeft, FaCamera, FaUser } from 'react-icons/fa'
 
 const API_URL = '/api/users'
 
@@ -18,10 +18,19 @@ function Register() {
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState(null)
+  const [photo, setPhoto] = useState(null)
+  const [photoPreview, setPhotoPreview] = useState(null)
 
   const handleChange = (e) => {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files && e.target.files[0]
+    if (!file) return
+    setPhoto(file)
+    setPhotoPreview(URL.createObjectURL(file))
   }
 
   const validate = () => {
@@ -55,21 +64,23 @@ function Register() {
 
     setLoading(true)
     try {
+      const fd = new FormData()
+      fd.append('name', form.name)
+      fd.append('lastName', form.lastName)
+      fd.append('email', form.email)
+      fd.append('password', form.password)
+      if (photo) fd.append('file', photo)
       const res = await fetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: form.name,
-          lastName: form.lastName,
-          email: form.email,
-          password: form.password,
-        }),
+        body: fd,
       })
       const body = await res.json()
       if (!res.ok || (body && body.status && body.status >= 400)) {
         throw new Error(body.message || 'Hubo un error al crear la cuenta.')
       }
       setForm(emptyForm)
+      setPhoto(null)
+      setPhotoPreview(null)
       navigate('/login')
     } catch (err) {
       setMessage({ type: 'error', text: err.message })
@@ -160,6 +171,35 @@ function Register() {
               className={`${inputClass} ${errors.confirmPassword ? errorClass : ''}`}
             />
             {errors.confirmPassword && <p className="text-xs text-red-600 mt-1">{errors.confirmPassword}</p>}
+          </div>
+
+          <div className="sm:col-span-2 flex flex-col items-center gap-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Foto de perfil (opcional)</label>
+            <label className="relative w-24 h-24 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 hover:border-violet-400 flex items-center justify-center overflow-hidden cursor-pointer">
+              {photoPreview ? (
+                <img src={photoPreview} alt="Vista previa" className="w-full h-full object-cover" />
+              ) : (
+                <FaCamera className="text-gray-400 text-2xl" />
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                className="hidden"
+              />
+            </label>
+            {photo && (
+              <button
+                type="button"
+                onClick={() => {
+                  setPhoto(null)
+                  setPhotoPreview(null)
+                }}
+                className="text-xs text-red-500 hover:text-red-700 cursor-pointer"
+              >
+                Quitar foto
+              </button>
+            )}
           </div>
 
           <div className="sm:col-span-2">
