@@ -10,6 +10,7 @@ const emptyForm = {
   email: '',
   password: '',
   confirmPassword: '',
+  role: 'USER',
 }
 
 function Register() {
@@ -69,6 +70,7 @@ function Register() {
       fd.append('lastName', form.lastName)
       fd.append('email', form.email)
       fd.append('password', form.password)
+      fd.append('role', form.role)
       if (photo) fd.append('file', photo)
       const res = await fetch(API_URL, {
         method: 'POST',
@@ -149,6 +151,23 @@ function Register() {
               className={`${inputClass} ${errors.email ? errorClass : ''}`}
             />
             {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
+          </div>
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de cuenta</label>
+            <select
+              name="role"
+              value={form.role}
+              onChange={handleChange}
+              className={inputClass}
+            >
+              <option value="USER">Cliente</option>
+              <option value="OWNER">Dueño de autos</option>
+            </select>
+            {form.role === 'OWNER' && (
+              <p className="text-xs text-amber-600 mt-1">
+                Las cuentas de dueño deben ser verificadas por un administrador antes de gestionar autos y empleados.
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>

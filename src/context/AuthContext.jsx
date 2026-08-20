@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useCallback, useContext, useState } from 'react'
 
 const AuthContext = createContext(null)
 
@@ -16,30 +16,33 @@ function readStoredAuth() {
 export function AuthProvider({ children }) {
   const [auth, setAuth] = useState(readStoredAuth)
 
-  const login = (token, user) => {
+  const login = useCallback((token, user) => {
     const next = { token, user }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
     setAuth(next)
-  }
+  }, [])
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY)
     setAuth(null)
-  }
+  }, [])
 
-  const setUser = (user) => {
-    const next = { token: auth?.token, user }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-    setAuth(next)
-  }
+  const setUser = useCallback((user) => {
+    setAuth((prev) => {
+      const next = { token: prev?.token, user }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      return next
+    })
+  }, [])
 
-  const authFetch = async (url, options = {}) => {
+  const authFetch = useCallback(async (url, options = {}) => {
     const headers = new Headers(options.headers || {})
-    if (auth?.token) {
-      headers.set('Authorization', `Bearer ${auth.token}`)
+    const stored = readStoredAuth()
+    if (stored?.token) {
+      headers.set('Authorization', `Bearer ${stored.token}`)
     }
     return fetch(url, { ...options, headers })
-  }
+  }, [])
 
   return (
     <AuthContext.Provider value={{ auth, login, logout, setUser, authFetch }}>

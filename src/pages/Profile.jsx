@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FaCamera, FaShieldAlt, FaSignOutAlt, FaTrashAlt, FaUser } from 'react-icons/fa'
+import { FaBriefcase, FaCamera, FaCheckCircle, FaClock, FaShieldAlt, FaSignOutAlt, FaTrashAlt, FaUser, FaUserTie } from 'react-icons/fa'
 import { useAuth } from '../context/AuthContext'
 
 function Profile() {
@@ -57,7 +57,16 @@ function Profile() {
     }
   }
 
-  const isAdmin = auth?.user?.role === 'ADMIN'
+  const role = auth?.user?.role
+  const roleInfo = {
+    ADMIN: { label: 'Administrador', icon: FaShieldAlt, cls: 'bg-violet-100 text-violet-700' },
+    OWNER: { label: 'Dueño', icon: FaUserTie, cls: 'bg-amber-100 text-amber-700' },
+    EMPLOYEE: { label: 'Empleado', icon: FaBriefcase, cls: 'bg-blue-100 text-blue-700' },
+    USER: { label: 'Usuario', icon: FaUser, cls: 'bg-gray-100 text-gray-700' },
+  }
+  const currentRole = roleInfo[role] || roleInfo.USER
+  const RoleIcon = currentRole.icon
+  const isVerified = auth.user.verified === true
   const initials = `${auth.user.name.charAt(0).toUpperCase()}${auth.user.lastName.charAt(0).toUpperCase()}`
 
   return (
@@ -105,15 +114,24 @@ function Profile() {
           <p className="text-gray-500 mt-1">{auth.user.email}</p>
 
           <span
-            className={`inline-flex items-center gap-1 mt-4 px-4 py-1.5 text-sm font-semibold rounded-full ${
-              isAdmin
-                ? 'bg-violet-100 text-violet-700'
-                : 'bg-gray-100 text-gray-700'
-            }`}
+            className={`inline-flex items-center gap-1 mt-4 px-4 py-1.5 text-sm font-semibold rounded-full ${currentRole.cls}`}
           >
-            {isAdmin ? <FaShieldAlt /> : <FaUser />}
-            {isAdmin ? 'Administrador' : 'Usuario'}
+            <RoleIcon />
+            {currentRole.label}
           </span>
+
+          {role === 'OWNER' && (
+            <span
+              className={`inline-flex items-center gap-1 mt-2 px-4 py-1.5 text-sm font-semibold rounded-full ${
+                isVerified
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-amber-100 text-amber-700'
+              }`}
+            >
+              {isVerified ? <FaCheckCircle /> : <FaClock />}
+              {isVerified ? 'Verificado' : 'Pendiente de verificación'}
+            </span>
+          )}
 
           <button
             onClick={handleLogout}

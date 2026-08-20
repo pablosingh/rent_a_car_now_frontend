@@ -11,8 +11,10 @@ const PAGE_SIZE = 10
 const buildCategoryParam = (category) =>
   category ? `&category=${encodeURIComponent(category)}` : ''
 
-const fetchCars = async (page, category) => {
-  const res = await fetch(`${API_URL}?page=${page}&size=${PAGE_SIZE}${buildCategoryParam(category)}`)
+const buildOwnerParam = (ownerId) => (ownerId ? `&ownerId=${ownerId}` : '')
+
+const fetchCars = async (page, category, ownerId) => {
+  const res = await fetch(`${API_URL}?page=${page}&size=${PAGE_SIZE}${buildCategoryParam(category)}${buildOwnerParam(ownerId)}`)
   const body = await res.json()
   if (!res.ok || (body && body.status && body.status >= 400)) {
     throw new Error(body.message || 'Hubo un error al cargar los autos.')
@@ -20,8 +22,14 @@ const fetchCars = async (page, category) => {
   return body.data
 }
 
-function AdminCars() {
-  const { authFetch } = useAuth()
+function AdminCars({ scope = 'all' }) {
+  const { auth, authFetch } = useAuth()
+  const ownerId =
+    scope === 'mine'
+      ? auth?.user?.role === 'OWNER'
+        ? auth.user.id
+        : auth?.user?.owner?.id
+      : null
   const [cars, setCars] = useState([])
   const [currentPage, setCurrentPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
@@ -32,7 +40,7 @@ function AdminCars() {
 
   useEffect(() => {
     let active = true
-    fetchCars(currentPage, category)
+    fetchCars(currentPage, category, ownerId)
       .then((data) => {
         if (!active) return
         setCars(data.content)
@@ -47,7 +55,7 @@ function AdminCars() {
     return () => {
       active = false
     }
-  }, [currentPage, category])
+  }, [currentPage, category, ownerId])
 
   const handleCategoryChange = (value) => {
     setCategory(value)
@@ -62,7 +70,7 @@ function AdminCars() {
   const handleRetry = () => {
     setLoading(true)
     setError(null)
-    fetchCars(currentPage, category)
+    fetchCars(currentPage, category, ownerId)
       .then((data) => {
         setCars(data.content)
         setTotalPages(data.totalPages)
@@ -95,14 +103,16 @@ function AdminCars() {
     <AdminOnly>
       <section className="max-w-7xl mx-auto">
       <Link
-        to="/admin"
+        to={scope === 'mine' ? '/panel' : '/admin'}
         className="inline-flex items-center gap-2 text-violet-600 hover:text-violet-800 mb-4"
       >
         <FaArrowLeft />
         Volver
       </Link>
 
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Lista de Autos</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">
+        {scope === 'mine' ? 'Mis autos' : 'Lista de Autos'}
+      </h2>
 
       <div className="mb-6">
         <select
@@ -137,12 +147,15 @@ function AdminCars() {
 
       {!loading && cars.length > 0 && (
         <div className="grid grid-cols-5 gap-3">
-          {cars.map((car) => (
+          {cars.map((car) => {
+            const detailPath = `${scope === 'mine' ? '/mis-autos' : '/admin/cars'}/${car.plate}`
+            const editPath = `${detailPath}/edit`
+            return (
             <div
               key={car.id}
               className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col"
             >
-              <Link to={`/admin/cars/${car.plate}`} className="block">
+              <Link to={detailPath} className="block">
                 <div className="h-24 bg-gray-200 flex items-center justify-center overflow-hidden">
                   {car.imagePaths?.length > 0 ? (
                     <img
@@ -157,7 +170,7 @@ function AdminCars() {
               </Link>
               <div className="p-3 flex flex-col gap-1 flex-1">
                 <div className="flex items-start justify-between gap-2">
-                  <Link to={`/admin/cars/${car.plate}`} className="min-w-0">
+                  <Link to={detailPath} className="min-w-0">
                     <h3 className="font-semibold text-sm truncate hover:text-violet-600">
                       {car.brand} {car.model}
                     </h3>
@@ -185,7 +198,7 @@ function AdminCars() {
                 <p className="text-gray-400 text-[10px]">{car.plate}</p>
                 <div className="flex gap-2 mt-auto pt-2">
                   <Link
-                    to={`/admin/cars/${car.plate}/edit`}
+                    to={editPath}
                     className="flex-1 flex items-center justify-center gap-1 px-2 py-1 text-xs font-semibold rounded border-2 border-violet-500 text-violet-500 hover:bg-violet-50 cursor-pointer"
                   >
                     <FaEdit />
@@ -202,7 +215,8 @@ function AdminCars() {
                 </div>
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams, useNavigate } from 'react-router-dom'
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom'
 import { FaArrowLeft, FaCar } from 'react-icons/fa'
 import AdminOnly from '../components/AdminOnly/AdminOnly'
 import { useAuth } from '../context/AuthContext'
@@ -10,7 +10,10 @@ const API_URL = '/api/cars'
 function AdminCarEdit() {
   const { plate } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { authFetch } = useAuth()
+
+  const listPath = location.pathname.startsWith('/mis-autos') ? '/mis-autos' : '/admin/cars'
 
   const [form, setForm] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -77,7 +80,7 @@ function AdminCarEdit() {
     <AdminOnly>
       <div className="max-w-2xl mx-auto">
       <Link
-        to="/admin/cars"
+        to={listPath}
         className="inline-flex items-center gap-2 text-violet-600 hover:text-violet-800 mb-6"
       >
         <FaArrowLeft />
@@ -160,7 +163,7 @@ function AdminCarEdit() {
               </button>
               <button
                 type="button"
-                onClick={() => navigate('/admin/cars')}
+                onClick={() => navigate(listPath)}
                 className="px-8 py-3 text-lg font-semibold rounded-lg border-2 border-gray-300 text-gray-600 hover:bg-gray-50 cursor-pointer"
               >
                 Cancelar

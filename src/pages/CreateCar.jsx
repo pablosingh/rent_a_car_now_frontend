@@ -18,12 +18,35 @@ const emptyForm = {
 }
 
 function CreateCar() {
-  const { authFetch } = useAuth()
+  const { auth, authFetch } = useAuth()
+  const isAdmin = auth?.user?.role === 'ADMIN'
   const [form, setForm] = useState(emptyForm)
   const [images, setImages] = useState([])
   const imagesRef = useRef(images)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState(null)
+  const [owners, setOwners] = useState([])
+  const [ownerId, setOwnerId] = useState('')
+
+  useEffect(() => {
+    if (!isAdmin) return
+    let active = true
+    authFetch('/api/users')
+      .then((res) => res.json().then((body) => ({ res, body })))
+      .then(({ res, body }) => {
+        if (!active) return
+        if (!res.ok || (body && body.status && body.status >= 400)) {
+          throw new Error(body.message || 'Hubo un error al cargar los dueños.')
+        }
+        setOwners((body.data || []).filter((u) => u.role === 'OWNER' && u.verified))
+      })
+      .catch((err) => {
+        if (active) setMessage({ type: 'error', text: err.message })
+      })
+    return () => {
+      active = false
+    }
+  }, [isAdmin, authFetch])
 
   useEffect(() => {
     imagesRef.current = images
@@ -78,7 +101,7 @@ function CreateCar() {
     setMessage(null)
 
     try {
-      const res = await authFetch(API_URL, {
+      const res = await authFetch(`${API_URL}${ownerId ? `?ownerId=${ownerId}` : ''}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -190,6 +213,25 @@ function CreateCar() {
             />
             Disponible
           </label>
+
+          {isAdmin && (
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Dueño</label>
+              <select
+                value={ownerId}
+                onChange={(e) => setOwnerId(e.target.value)}
+                required
+                className={inputClass}
+              >
+                <option value="">Seleccioná un dueño verificado</option>
+                {owners.map((owner) => (
+                  <option key={owner.id} value={owner.id}>
+                    {owner.name} {owner.lastName} ({owner.email})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="sm:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">Fotos</label>

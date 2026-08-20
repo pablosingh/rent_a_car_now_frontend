@@ -9,6 +9,9 @@ import Admin from './pages/Admin'
 import AdminCars from './pages/AdminCars'
 import AdminCarEdit from './pages/AdminCarEdit'
 import AdminReservations from './pages/AdminReservations'
+import AdminVerifyOwners from './pages/AdminVerifyOwners'
+import OwnerPanel from './pages/OwnerPanel'
+import OwnerEmployees from './pages/OwnerEmployees'
 import Register from './pages/Register'
 import Login from './pages/Login'
 import Profile from './pages/Profile'
@@ -21,15 +24,25 @@ function App() {
         <Routes>
           <Route path="/" element={<CarGrid />} />
           <Route path="/car/:plate" element={<CarDetail />} />
-          <Route path="/crear" element={<RequireAuth admin><CreateCar /></RequireAuth>} />
           <Route path="/registro" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
-          <Route path="/admin" element={<RequireAuth admin><Admin /></RequireAuth>} />
-          <Route path="/admin/cars" element={<RequireAuth admin><AdminCars /></RequireAuth>} />
-          <Route path="/admin/cars/:plate" element={<RequireAuth admin><CarDetail admin /></RequireAuth>} />
-          <Route path="/admin/cars/:plate/edit" element={<RequireAuth admin><AdminCarEdit /></RequireAuth>} />
-          <Route path="/admin/reservations" element={<RequireAuth admin><AdminReservations /></RequireAuth>} />
+          <Route path="/mis-reservas" element={<RequireAuth><AdminReservations responsive={false} /></RequireAuth>} />
+
+          <Route path="/admin" element={<RequireAuth roles={['ADMIN']}><Admin /></RequireAuth>} />
+          <Route path="/admin/owners" element={<RequireAuth roles={['ADMIN']}><AdminVerifyOwners /></RequireAuth>} />
+          <Route path="/admin/cars" element={<RequireAuth roles={['ADMIN']}><AdminCars scope="all" /></RequireAuth>} />
+          <Route path="/admin/cars/:plate" element={<RequireAuth roles={['ADMIN']}><CarDetail admin /></RequireAuth>} />
+          <Route path="/admin/cars/:plate/edit" element={<RequireAuth roles={['ADMIN']}><AdminCarEdit /></RequireAuth>} />
+
+          <Route path="/panel" element={<RequireAuth roles={['OWNER', 'EMPLOYEE']}><OwnerPanel /></RequireAuth>} />
+          <Route path="/mis-autos" element={<RequireAuth roles={['OWNER', 'EMPLOYEE']}><AdminCars scope="mine" /></RequireAuth>} />
+          <Route path="/mis-autos/:plate" element={<RequireAuth roles={['OWNER', 'EMPLOYEE']}><CarDetail admin /></RequireAuth>} />
+          <Route path="/mis-autos/:plate/edit" element={<RequireAuth roles={['OWNER', 'EMPLOYEE']}><AdminCarEdit /></RequireAuth>} />
+
+          <Route path="/reservas" element={<RequireAuth roles={['ADMIN', 'OWNER', 'EMPLOYEE']}><AdminReservations /></RequireAuth>} />
+          <Route path="/crear" element={<RequireAuth roles={['ADMIN', 'OWNER', 'EMPLOYEE']}><CreateCar /></RequireAuth>} />
+          <Route path="/empleados" element={<RequireAuth roles={['ADMIN', 'OWNER']}><OwnerEmployees /></RequireAuth>} />
         </Routes>
       </main>
       <Footer />

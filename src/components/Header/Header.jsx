@@ -19,6 +19,22 @@ function Header() {
     navigate('/')
   }
 
+  const panelPath = !auth?.user
+    ? null
+    : auth.user.role === 'ADMIN'
+      ? '/admin'
+      : auth.user.role === 'OWNER' || auth.user.role === 'EMPLOYEE'
+        ? '/panel'
+        : '/mis-reservas'
+
+  const panelLabel = !auth?.user
+    ? ''
+    : auth.user.role === 'ADMIN'
+      ? 'Administrador'
+      : auth.user.role === 'OWNER' || auth.user.role === 'EMPLOYEE'
+        ? 'Mi panel'
+        : 'Mis reservas'
+
   return (
     <header className="fixed top-0 left-0 w-full bg-white shadow-md z-50">
       <div className="px-4 md:px-8">
@@ -111,12 +127,14 @@ function Header() {
           >
             Home
           </Link>
-          <Link
-            to="/admin"
-            className="px-4 py-1.5 text-sm font-semibold rounded border-2 border-violet-500 text-violet-500 hover:bg-violet-50 cursor-pointer"
-          >
-            Administrador
-          </Link>
+          {panelPath && (
+            <Link
+              to={panelPath}
+              className="px-4 py-1.5 text-sm font-semibold rounded border-2 border-violet-500 text-violet-500 hover:bg-violet-50 cursor-pointer"
+            >
+              {panelLabel}
+            </Link>
+          )}
         </div>
       </div>
     </header>

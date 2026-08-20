@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { FaArrowLeft, FaCalendar, FaCar, FaCheckCircle, FaEdit, FaTimesCircle, FaTrash } from 'react-icons/fa'
 import AdminOnly from '../components/AdminOnly/AdminOnly'
 import { useAuth } from '../context/AuthContext'
@@ -7,12 +7,18 @@ import { useAuth } from '../context/AuthContext'
 function CarDetail({ admin = false }) {
   const { plate } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { auth, authFetch } = useAuth()
   const [car, setCar] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [selectedImage, setSelectedImage] = useState(0)
   const [deleting, setDeleting] = useState(false)
+  const [days, setDays] = useState(1)
+  const [reserving, setReserving] = useState(false)
+  const [reservationMsg, setReservationMsg] = useState(null)
+
+  const listPath = location.pathname.startsWith('/mis-autos') ? '/mis-autos' : '/admin/cars'
 
   useEffect(() => {
     const loadCar = async () => {
@@ -44,10 +50,36 @@ function CarDetail({ admin = false }) {
       if (!res.ok || (body && body.status && body.status >= 400)) {
         throw new Error(body.message || 'Hubo un error al borrar el auto.')
       }
-      navigate('/admin/cars')
+      navigate(listPath)
     } catch (err) {
       window.alert(err.message)
       setDeleting(false)
+    }
+  }
+
+  const handleReserve = async () => {
+    if (!auth?.user || !car) return
+    setReserving(true)
+    setReservationMsg(null)
+    try {
+      const res = await authFetch('/api/reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          durationInDays: Number(days),
+          carId: car.id,
+          userId: auth.user.id,
+        }),
+      })
+      const body = await res.json()
+      if (!res.ok || (body && body.status && body.status >= 400)) {
+        throw new Error(body.message || 'Hubo un error al reservar.')
+      }
+      setReservationMsg({ type: 'success', text: 'Reserva creada correctamente.' })
+    } catch (err) {
+      setReservationMsg({ type: 'error', text: err.message })
+    } finally {
+      setReserving(false)
     }
   }
 
@@ -76,7 +108,7 @@ function CarDetail({ admin = false }) {
     <AdminOnly enabled={admin}>
       <div className="max-w-4xl mx-auto">
       <Link
-        to={admin ? '/admin/cars' : '/'}
+        to={admin ? listPath : '/'}
         className="inline-flex items-center gap-2 text-violet-600 hover:text-violet-800 mb-6"
       >
         <FaArrowLeft />
@@ -180,12 +212,44 @@ function CarDetail({ admin = false }) {
           )}
 
           {!admin && (
-            <button
-              disabled={!car.available || !auth?.user}
-              className="mt-8 w-full md:w-auto px-8 py-3 text-lg font-semibold rounded-lg bg-violet-500 text-white hover:bg-violet-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Reservar ahora
-            </button>
+            <div className="mt-8">
+              {reservationMsg && (
+                <p
+                  className={`mb-3 text-sm ${
+                    reservationMsg.type === 'success'
+                      ? 'text-green-600'
+                      : 'text-red-600'
+                  }`}
+                >
+                  {reservationMsg.text}
+                </p>
+              )}
+              {auth?.user ? (
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                  <label className="flex items-center gap-2 text-sm text-gray-600">
+                    Días
+                    <input
+                      type="number"
+                      min="1"
+                      value={days}
+                      onChange={(e) => setDays(e.target.value)}
+                      className="w-20 px-3 py-2 text-sm border border-gray-300 rounded bg-gray-50 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                    />
+                  </label>
+                  <button
+                    onClick={handleReserve}
+                    disabled={!car.available || reserving}
+                    className="px-8 py-3 text-lg font-semibold rounded-lg bg-violet-500 text-white hover:bg-violet-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {reserving ? 'Reservando...' : 'Reservar ahora'}
+                  </button>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">
+                  Iniciá sesión para reservar este auto.
+                </p>
+              )}
+            </div>
           )}
         </div>
       </div>
