@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { FaArrowLeft, FaCamera, FaUser } from 'react-icons/fa'
+import { apiRequest, parseApiResponse } from '../utils/api'
 
 const API_URL = '/api/users'
 
@@ -72,14 +73,11 @@ function Register() {
       fd.append('password', form.password)
       fd.append('role', form.role)
       if (photo) fd.append('file', photo)
-      const res = await fetch(API_URL, {
+      const res = await apiRequest(API_URL, {
         method: 'POST',
         body: fd,
       })
-      const body = await res.json()
-      if (!res.ok || (body && body.status && body.status >= 400)) {
-        throw new Error(body.message || 'Hubo un error al crear la cuenta.')
-      }
+      await parseApiResponse(res, 'Hubo un error al crear la cuenta.')
       setForm(emptyForm)
       setPhoto(null)
       setPhotoPreview(null)

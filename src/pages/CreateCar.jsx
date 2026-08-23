@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { FaArrowLeft, FaCar, FaPlus, FaTrash } from 'react-icons/fa'
 import { useAuth } from '../context/AuthContext'
 import { CATEGORIES } from '../constants/categories'
+import { parseApiResponse } from '../utils/api'
 
 const API_URL = '/api/cars'
 
@@ -32,12 +33,9 @@ function CreateCar() {
     if (!isAdmin) return
     let active = true
     authFetch('/api/users')
-      .then((res) => res.json().then((body) => ({ res, body })))
-      .then(({ res, body }) => {
+      .then(parseApiResponse)
+      .then((body) => {
         if (!active) return
-        if (!res.ok || (body && body.status && body.status >= 400)) {
-          throw new Error(body.message || 'Hubo un error al cargar los dueños.')
-        }
         setOwners((body.data || []).filter((u) => u.role === 'OWNER' && u.verified))
       })
       .catch((err) => {
@@ -86,8 +84,7 @@ function CreateCar() {
       fd.append('file', img.file)
       try {
         const res = await authFetch(`${API_URL}/${plate}/images`, { method: 'POST', body: fd })
-        const body = await res.json()
-        if (!res.ok || (body && body.status && body.status >= 400)) throw new Error()
+        await parseApiResponse(res)
       } catch {
         failures.push(img.file.name)
       }
@@ -101,22 +98,19 @@ function CreateCar() {
     setMessage(null)
 
     try {
-      const res = await authFetch(`${API_URL}${ownerId ? `?ownerId=${ownerId}` : ''}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          year: Number(form.year),
-          pricePerDay: Number(form.pricePerDay),
-          pricePerHour: Number(form.pricePerHour),
+      const body = await parseApiResponse(
+        await authFetch(`${API_URL}${ownerId ? `?ownerId=${ownerId}` : ''}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...form,
+            year: Number(form.year),
+            pricePerDay: Number(form.pricePerDay),
+            pricePerHour: Number(form.pricePerHour),
+          }),
         }),
-      })
-
-      const body = await res.json()
-
-      if (!res.ok || (body && body.status && body.status >= 400)) {
-        throw new Error(body.message || 'Hubo un error al crear el auto.')
-      }
+        'Hubo un error al crear el auto.'
+      )
 
       const failures = await uploadImages(body.data.plate)
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { FaArrowLeft, FaTrash, FaUserFriends } from 'react-icons/fa'
 import { useAuth } from '../context/AuthContext'
+import { parseApiResponse } from '../utils/api'
 
 const API_URL = '/api/users'
 
@@ -27,13 +28,8 @@ function OwnerEmployees() {
   const fetchEmployees = useCallback(
     () =>
       authFetch(API_URL)
-        .then((res) => res.json().then((body) => ({ res, body })))
-        .then(({ res, body }) => {
-          if (!res.ok || (body && body.status && body.status >= 400)) {
-            throw new Error(body.message || 'Hubo un error al cargar los empleados.')
-          }
-          return (body.data || []).filter((u) => u.role === 'EMPLOYEE')
-        }),
+        .then(parseApiResponse)
+        .then((body) => (body.data || []).filter((u) => u.role === 'EMPLOYEE')),
     [authFetch]
   )
 
@@ -70,10 +66,7 @@ function OwnerEmployees() {
       fd.append('email', form.email)
       fd.append('password', form.password)
       const res = await authFetch(`${API_URL}/employees`, { method: 'POST', body: fd })
-      const body = await res.json()
-      if (!res.ok || (body && body.status && body.status >= 400)) {
-        throw new Error(body.message || 'Hubo un error al crear el empleado.')
-      }
+      const body = await parseApiResponse(res, 'Hubo un error al crear el empleado.')
       setEmployees((prev) => [...prev, body.data])
       setForm(emptyForm)
       setMessage({ type: 'success', text: 'Empleado creado correctamente.' })
@@ -88,10 +81,7 @@ function OwnerEmployees() {
     if (!window.confirm(`¿Seguro que querés borrar a ${employee.name} ${employee.lastName}?`)) return
     try {
       const res = await authFetch(`${API_URL}/${employee.id}`, { method: 'DELETE' })
-      const body = await res.json()
-      if (!res.ok || (body && body.status && body.status >= 400)) {
-        throw new Error(body.message || 'Hubo un error al borrar el empleado.')
-      }
+      await parseApiResponse(res, 'Hubo un error al borrar el empleado.')
       setEmployees((prev) => prev.filter((u) => u.id !== employee.id))
     } catch (err) {
       window.alert(err.message)

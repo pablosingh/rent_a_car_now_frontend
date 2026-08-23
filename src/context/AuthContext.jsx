@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useState } from 'react'
+import { API_ERROR_MESSAGE } from '../utils/api'
 
 const AuthContext = createContext(null)
 
@@ -41,7 +42,11 @@ export function AuthProvider({ children }) {
     if (stored?.token) {
       headers.set('Authorization', `Bearer ${stored.token}`)
     }
-    return fetch(url, { ...options, headers })
+    try {
+      return await fetch(url, { ...options, headers })
+    } catch {
+      throw new Error(API_ERROR_MESSAGE)
+    }
   }, [])
 
   return (

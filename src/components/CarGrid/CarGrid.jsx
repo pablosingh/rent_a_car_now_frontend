@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import CarCard from '../CarCard/CarCard'
 import { CATEGORIES } from '../../constants/categories'
+import { apiRequest, parseApiResponse } from '../../utils/api'
 
 const PAGE_SIZE = 10
 
@@ -8,20 +9,16 @@ const buildCategoryParam = (category) =>
   category ? `&category=${encodeURIComponent(category)}` : ''
 
 const fetchCarsPage = async (page, category) => {
-  const res = await fetch(`/api/cars?page=${page}&size=${PAGE_SIZE}&available=true${buildCategoryParam(category)}`)
-  const body = await res.json()
-  if (!res.ok || (body && body.status && body.status >= 400)) {
-    throw new Error(body.message || 'Hubo un error al cargar los autos.')
-  }
+  const body = await parseApiResponse(
+    await apiRequest(`/api/cars?page=${page}&size=${PAGE_SIZE}&available=true${buildCategoryParam(category)}`)
+  )
   return body.data
 }
 
 const fetchRandomCars = async (category) => {
-  const res = await fetch(`/api/cars/random?limit=${PAGE_SIZE}&available=true${buildCategoryParam(category)}`)
-  const body = await res.json()
-  if (!res.ok || (body && body.status && body.status >= 400)) {
-    throw new Error(body.message || 'Hubo un error al cargar los autos.')
-  }
+  const body = await parseApiResponse(
+    await apiRequest(`/api/cars/random?limit=${PAGE_SIZE}&available=true${buildCategoryParam(category)}`)
+  )
   return body.data
 }
 

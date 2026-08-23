@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FaArrowLeft, FaCheckCircle, FaUserCheck } from 'react-icons/fa'
 import { useAuth } from '../context/AuthContext'
+import { parseApiResponse } from '../utils/api'
 
 function AdminVerifyOwners() {
   const { authFetch } = useAuth()
@@ -14,12 +15,9 @@ function AdminVerifyOwners() {
   useEffect(() => {
     let active = true
     authFetch('/api/users')
-      .then((res) => res.json().then((body) => ({ res, body })))
-      .then(({ res, body }) => {
+      .then(parseApiResponse)
+      .then((body) => {
         if (!active) return
-        if (!res.ok || (body && body.status && body.status >= 400)) {
-          throw new Error(body.message || 'Hubo un error al cargar los dueños.')
-        }
         setOwners((body.data || []).filter((u) => u.role === 'OWNER' && u.verified !== true))
       })
       .catch((err) => {
@@ -38,10 +36,7 @@ function AdminVerifyOwners() {
     setMessage(null)
     try {
       const res = await authFetch(`/api/users/${owner.id}/verify`, { method: 'PUT' })
-      const body = await res.json()
-      if (!res.ok || (body && body.status && body.status >= 400)) {
-        throw new Error(body.message || 'Hubo un error al verificar el dueño.')
-      }
+      await parseApiResponse(res, 'Hubo un error al verificar el dueño.')
       setOwners((prev) => prev.filter((u) => u.id !== owner.id))
       setMessage({ type: 'success', text: `${owner.name} ${owner.lastName} fue verificado.` })
     } catch (err) {

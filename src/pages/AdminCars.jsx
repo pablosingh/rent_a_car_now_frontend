@@ -4,6 +4,7 @@ import { FaArrowLeft, FaEdit, FaTrash, FaCar } from 'react-icons/fa'
 import AdminOnly from '../components/AdminOnly/AdminOnly'
 import { useAuth } from '../context/AuthContext'
 import { CATEGORIES } from '../constants/categories'
+import { apiRequest, parseApiResponse } from '../utils/api'
 
 const API_URL = '/api/cars'
 const PAGE_SIZE = 10
@@ -14,11 +15,10 @@ const buildCategoryParam = (category) =>
 const buildOwnerParam = (ownerId) => (ownerId ? `&ownerId=${ownerId}` : '')
 
 const fetchCars = async (page, category, ownerId) => {
-  const res = await fetch(`${API_URL}?page=${page}&size=${PAGE_SIZE}${buildCategoryParam(category)}${buildOwnerParam(ownerId)}`)
-  const body = await res.json()
-  if (!res.ok || (body && body.status && body.status >= 400)) {
-    throw new Error(body.message || 'Hubo un error al cargar los autos.')
-  }
+  const body = await parseApiResponse(
+    await apiRequest(`${API_URL}?page=${page}&size=${PAGE_SIZE}${buildCategoryParam(category)}${buildOwnerParam(ownerId)}`),
+    'Hubo un error al cargar los autos.'
+  )
   return body.data
 }
 
@@ -83,10 +83,7 @@ function AdminCars({ scope = 'all' }) {
     setDeleting(true)
     try {
       const res = await authFetch(`${API_URL}/${car.id}`, { method: 'DELETE' })
-      const body = await res.json()
-      if (!res.ok || (body && body.status && body.status >= 400)) {
-        throw new Error(body.message || 'Hubo un error al borrar el auto.')
-      }
+      await parseApiResponse(res, 'Hubo un error al borrar el auto.')
       if (cars.length === 1 && currentPage > 0) {
         setCurrentPage((prev) => prev - 1)
       } else {

@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { FaArrowLeft, FaCalendar, FaCar, FaCheckCircle, FaEdit, FaTimesCircle, FaTrash } from 'react-icons/fa'
 import AdminOnly from '../components/AdminOnly/AdminOnly'
 import { useAuth } from '../context/AuthContext'
+import { apiRequest, parseApiResponse } from '../utils/api'
 
 function CarDetail({ admin = false }) {
   const { plate } = useParams()
@@ -25,11 +26,10 @@ function CarDetail({ admin = false }) {
       setLoading(true)
       setError(null)
       try {
-        const res = await fetch(`/api/cars/${plate}`)
-        const body = await res.json()
-        if (!res.ok || (body && body.status && body.status >= 400)) {
-          throw new Error(body.message || 'Auto no encontrado.')
-        }
+        const body = await parseApiResponse(
+          await apiRequest(`/api/cars/${plate}`),
+          'Auto no encontrado.'
+        )
         setCar(body.data)
         setSelectedImage(0)
       } catch (err) {
@@ -46,10 +46,7 @@ function CarDetail({ admin = false }) {
     setDeleting(true)
     try {
       const res = await authFetch(`/api/cars/${car.id}`, { method: 'DELETE' })
-      const body = await res.json()
-      if (!res.ok || (body && body.status && body.status >= 400)) {
-        throw new Error(body.message || 'Hubo un error al borrar el auto.')
-      }
+      await parseApiResponse(res, 'Hubo un error al borrar el auto.')
       navigate(listPath)
     } catch (err) {
       window.alert(err.message)
@@ -71,10 +68,7 @@ function CarDetail({ admin = false }) {
           userId: auth.user.id,
         }),
       })
-      const body = await res.json()
-      if (!res.ok || (body && body.status && body.status >= 400)) {
-        throw new Error(body.message || 'Hubo un error al reservar.')
-      }
+      await parseApiResponse(res, 'Hubo un error al reservar.')
       setReservationMsg({ type: 'success', text: 'Reserva creada correctamente.' })
     } catch (err) {
       setReservationMsg({ type: 'error', text: err.message })

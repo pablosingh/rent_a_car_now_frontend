@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FaBriefcase, FaCamera, FaCheckCircle, FaClock, FaShieldAlt, FaSignOutAlt, FaTrashAlt, FaUser, FaUserTie } from 'react-icons/fa'
 import { useAuth } from '../context/AuthContext'
+import { parseApiResponse } from '../utils/api'
 
 function Profile() {
   const { auth, logout, setUser, authFetch } = useAuth()
@@ -25,10 +26,7 @@ function Profile() {
       const fd = new FormData()
       fd.append('file', file)
       const res = await authFetch(`/api/users/${auth.user.id}/photo`, { method: 'POST', body: fd })
-      const body = await res.json()
-      if (!res.ok || (body && body.status && body.status >= 400)) {
-        throw new Error(body.message || 'Hubo un error al subir la foto.')
-      }
+      const body = await parseApiResponse(res, 'Hubo un error al subir la foto.')
       setUser(body.data)
       setMessage({ type: 'success', text: 'Foto de perfil actualizada.' })
     } catch (err) {
@@ -44,10 +42,7 @@ function Profile() {
     setMessage(null)
     try {
       const res = await authFetch(`/api/users/${auth.user.id}/photo`, { method: 'DELETE' })
-      const body = await res.json()
-      if (!res.ok || (body && body.status && body.status >= 400)) {
-        throw new Error(body.message || 'Hubo un error al eliminar la foto.')
-      }
+      const body = await parseApiResponse(res, 'Hubo un error al eliminar la foto.')
       setUser(body.data)
       setMessage({ type: 'success', text: 'Foto de perfil eliminada.' })
     } catch (err) {

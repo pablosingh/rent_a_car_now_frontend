@@ -4,6 +4,7 @@ import { FaArrowLeft, FaCar } from 'react-icons/fa'
 import AdminOnly from '../components/AdminOnly/AdminOnly'
 import { useAuth } from '../context/AuthContext'
 import { CATEGORIES } from '../constants/categories'
+import { apiRequest, parseApiResponse } from '../utils/api'
 
 const API_URL = '/api/cars'
 
@@ -20,15 +21,12 @@ function AdminCarEdit() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState(null)
 
-  const resOk = (body) => !(body && body.status && body.status >= 400)
-
   useEffect(() => {
     let active = true
-    fetch(`${API_URL}/${plate}`)
-      .then((res) => res.json())
+    apiRequest(`${API_URL}/${plate}`)
+      .then(parseApiResponse)
       .then((body) => {
         if (!active) return
-        if (!resOk(body)) throw new Error(body.message || 'Hubo un error al cargar el auto.')
         const { brand, model, year, pricePerDay, pricePerHour, available, category } = body.data
         setForm({ brand, model, year, pricePerDay, pricePerHour, available, category: category || '' })
       })
@@ -60,11 +58,10 @@ function AdminCarEdit() {
         available: form.available,
         category: form.category,
       })
-      const res = await authFetch(`${API_URL}/${plate}?${params}`, { method: 'PUT' })
-      const body = await res.json()
-      if (!res.ok || (body && body.status && body.status >= 400)) {
-        throw new Error(body.message || 'Hubo un error al actualizar el auto.')
-      }
+      await parseApiResponse(
+        await authFetch(`${API_URL}/${plate}?${params}`, { method: 'PUT' }),
+        'Hubo un error al actualizar el auto.'
+      )
       setMessage({ type: 'success', text: 'Auto actualizado correctamente.' })
     } catch (err) {
       setMessage({ type: 'error', text: err.message })

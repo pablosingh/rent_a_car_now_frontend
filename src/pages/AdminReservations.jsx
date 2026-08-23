@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { FaArrowLeft, FaCalendarCheck, FaTrash } from 'react-icons/fa'
 import AdminOnly from '../components/AdminOnly/AdminOnly'
 import { useAuth } from '../context/AuthContext'
+import { parseApiResponse } from '../utils/api'
 
 function AdminReservations({ title = 'Reservas', responsive = true }) {
   const location = useLocation()
@@ -21,13 +22,8 @@ function AdminReservations({ title = 'Reservas', responsive = true }) {
   const fetchReservations = useCallback(
     () =>
       authFetch('/api/reservations')
-        .then((res) => res.json().then((body) => ({ res, body })))
-        .then(({ res, body }) => {
-          if (!res.ok || (body && body.status && body.status >= 400)) {
-            throw new Error(body.message || 'Hubo un error al cargar las reservas.')
-          }
-          return body.data || []
-        }),
+        .then(parseApiResponse)
+        .then((body) => body.data || []),
     [authFetch]
   )
 
@@ -62,10 +58,7 @@ function AdminReservations({ title = 'Reservas', responsive = true }) {
     setDeleting(true)
     try {
       const res = await authFetch(`/api/reservations/${reservation.id}`, { method: 'DELETE' })
-      const body = await res.json()
-      if (!res.ok || (body && body.status && body.status >= 400)) {
-        throw new Error(body.message || 'Hubo un error al borrar la reserva.')
-      }
+      await parseApiResponse(res, 'Hubo un error al borrar la reserva.')
       setReservations((prev) => prev.filter((r) => r.id !== reservation.id))
     } catch (err) {
       window.alert(err.message)

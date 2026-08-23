@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { FaArrowLeft, FaSignInAlt } from 'react-icons/fa'
 import { useAuth } from '../context/AuthContext'
+import { apiRequest, parseApiResponse } from '../utils/api'
 
 const API_URL = '/api/users/login'
 
@@ -40,15 +41,12 @@ function Login() {
 
     setLoading(true)
     try {
-      const res = await fetch(API_URL, {
+      const res = await apiRequest(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: form.email.trim(), password: form.password }),
       })
-      const body = await res.json()
-      if (!res.ok || (body && body.status && body.status >= 400)) {
-        throw new Error(body.message || 'No se pudo iniciar sesión.')
-      }
+      const body = await parseApiResponse(res, 'No se pudo iniciar sesión.')
       login(body.data.token, body.data.user)
       navigate('/')
     } catch (err) {
