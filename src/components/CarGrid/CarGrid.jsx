@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import CarCard from '../CarCard/CarCard'
 import { CATEGORIES } from '../../constants/categories'
 import { apiRequest, parseApiResponse } from '../../utils/api'
@@ -8,21 +9,26 @@ const PAGE_SIZE = 10
 const buildCategoryParam = (category) =>
   category ? `&category=${encodeURIComponent(category)}` : ''
 
-const fetchCarsPage = async (page, category) => {
+const buildSearchParam = (q) =>
+  q ? `&q=${encodeURIComponent(q)}` : ''
+
+const fetchCarsPage = async (page, category, q) => {
   const body = await parseApiResponse(
-    await apiRequest(`/api/cars?page=${page}&size=${PAGE_SIZE}&available=true${buildCategoryParam(category)}`)
+    await apiRequest(`/api/cars?page=${page}&size=${PAGE_SIZE}&available=true${buildCategoryParam(category)}${buildSearchParam(q)}`)
   )
   return body.data
 }
 
-const fetchRandomCars = async (category) => {
+const fetchRandomCars = async (category, q) => {
   const body = await parseApiResponse(
-    await apiRequest(`/api/cars/random?limit=${PAGE_SIZE}&available=true${buildCategoryParam(category)}`)
+    await apiRequest(`/api/cars/random?limit=${PAGE_SIZE}&available=true${buildCategoryParam(category)}${buildSearchParam(q)}`)
   )
   return body.data
 }
 
 function CarGrid() {
+  const [searchParams] = useSearchParams()
+  const q = searchParams.get('q') || ''
   const [cars, setCars] = useState([])
   const [totalPages, setTotalPages] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
@@ -33,7 +39,7 @@ function CarGrid() {
 
   useEffect(() => {
     let active = true
-    fetchRandomCars(category)
+    fetchRandomCars(category, q)
       .then((data) => {
         if (!active) return
         setCars(data)
@@ -43,7 +49,7 @@ function CarGrid() {
         if (active) setError(err.message)
       })
       .then(() => {
-        if (active) return fetchCarsPage(0, category).then((meta) => setTotalPages(meta.totalPages))
+        if (active) return fetchCarsPage(0, category, q).then((meta) => setTotalPages(meta.totalPages))
       })
       .catch(() => {
         if (active) setTotalPages(0)
@@ -54,7 +60,7 @@ function CarGrid() {
     return () => {
       active = false
     }
-  }, [category])
+  }, [category, q])
 
   const handleGoTo = async (targetPage) => {
     const totalDisplayed = totalPages + 1
@@ -64,9 +70,9 @@ function CarGrid() {
     setError(null)
     try {
       if (targetPage === 1) {
-        setCars(await fetchRandomCars(category))
+        setCars(await fetchRandomCars(category, q))
       } else {
-        const data = await fetchCarsPage(targetPage - 2, category)
+        const data = await fetchCarsPage(targetPage - 2, category, q)
         setCars(data.content)
         setTotalPages(data.totalPages)
       }
@@ -81,13 +87,13 @@ function CarGrid() {
   const handleRetry = () => {
     setLoading(true)
     setError(null)
-    fetchRandomCars(category)
+    fetchRandomCars(category, q)
       .then((data) => {
         setCars(data)
         setCurrentPage(1)
       })
       .catch((err) => setError(err.message))
-      .then(() => fetchCarsPage(0, category).then((meta) => setTotalPages(meta.totalPages)))
+      .then(() => fetchCarsPage(0, category, q).then((meta) => setTotalPages(meta.totalPages)))
       .catch(() => setTotalPages(0))
       .finally(() => setLoading(false))
   }

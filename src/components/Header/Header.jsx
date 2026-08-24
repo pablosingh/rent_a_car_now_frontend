@@ -11,7 +11,9 @@ function Header() {
   const [dropoffDate, setDropoffDate] = useState('')
 
   const handleSearch = () => {
-    console.log({ searchText, pickupDate, dropoffDate })
+    const params = new URLSearchParams()
+    if (searchText.trim()) params.set('q', searchText.trim())
+    navigate(`/${params.toString() ? '?' + params.toString() : ''}`)
   }
 
   const handleLogout = () => {
