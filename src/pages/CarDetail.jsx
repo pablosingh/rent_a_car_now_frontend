@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { FaArrowLeft, FaCalendar, FaCar, FaCheckCircle, FaEdit, FaTimesCircle, FaTrash } from 'react-icons/fa'
 import AdminOnly from '../components/AdminOnly/AdminOnly'
+import FeatureBadge from '../components/FeatureBadge/FeatureBadge'
 import { useAuth } from '../context/AuthContext'
 import { apiRequest, parseApiResponse } from '../utils/api'
 
@@ -198,6 +199,14 @@ function CarDetail({ admin = false }) {
               )}
             </div>
           </div>
+
+          {car.features && car.features.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-4">
+              {car.features.map((feature) => (
+                <FeatureBadge key={feature.id} feature={feature} />
+              ))}
+            </div>
+          )}
 
           {car.pricePerHour != null && (
             <p className="text-gray-500 mt-4">

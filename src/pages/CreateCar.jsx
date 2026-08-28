@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { FaArrowLeft, FaCar, FaPlus, FaTrash } from 'react-icons/fa'
 import { useAuth } from '../context/AuthContext'
 import { CATEGORIES } from '../constants/categories'
+import { ICON_MAP } from '../constants/icons'
 import { parseApiResponse } from '../utils/api'
 
 const API_URL = '/api/cars'
@@ -28,6 +29,8 @@ function CreateCar() {
   const [message, setMessage] = useState(null)
   const [owners, setOwners] = useState([])
   const [ownerId, setOwnerId] = useState('')
+  const [allFeatures, setAllFeatures] = useState([])
+  const [selectedFeatures, setSelectedFeatures] = useState([])
 
   useEffect(() => {
     if (!isAdmin) return
@@ -47,12 +50,30 @@ function CreateCar() {
   }, [isAdmin, authFetch])
 
   useEffect(() => {
+    let active = true
+    authFetch('/api/features')
+      .then(parseApiResponse)
+      .then((body) => {
+        if (!active) return
+        setAllFeatures(body.data || [])
+      })
+      .catch(() => {})
+    return () => { active = false }
+  }, [authFetch])
+
+  useEffect(() => {
     imagesRef.current = images
   }, [images])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
     setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
+  }
+
+  const toggleFeature = (featureId) => {
+    setSelectedFeatures((prev) =>
+      prev.includes(featureId) ? prev.filter((id) => id !== featureId) : [...prev, featureId]
+    )
   }
 
   const handleImageChange = (e) => {
@@ -107,6 +128,7 @@ function CreateCar() {
             year: Number(form.year),
             pricePerDay: Number(form.pricePerDay),
             pricePerHour: Number(form.pricePerHour),
+            features: selectedFeatures.map((id) => ({ id })),
           }),
         }),
         'Hubo un error al crear el auto.'
@@ -224,6 +246,33 @@ function CreateCar() {
                   </option>
                 ))}
               </select>
+            </div>
+          )}
+
+          {allFeatures.length > 0 && (
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Features</label>
+              <div className="flex flex-wrap gap-2">
+                {allFeatures.map((feature) => {
+                  const isSelected = selectedFeatures.includes(feature.id)
+                  const IconComp = feature.icon ? ICON_MAP[feature.icon] : null
+                  return (
+                    <button
+                      key={feature.id}
+                      type="button"
+                      onClick={() => toggleFeature(feature.id)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-full border-2 cursor-pointer transition ${
+                        isSelected
+                          ? 'border-violet-500 bg-violet-500 text-white'
+                          : 'border-gray-300 text-gray-600 hover:border-violet-400 hover:text-violet-600'
+                      }`}
+                    >
+                      {IconComp && <IconComp />}
+                      {feature.name}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           )}
 

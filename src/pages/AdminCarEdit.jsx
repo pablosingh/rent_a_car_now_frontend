@@ -4,6 +4,7 @@ import { FaArrowLeft, FaCar } from 'react-icons/fa'
 import AdminOnly from '../components/AdminOnly/AdminOnly'
 import { useAuth } from '../context/AuthContext'
 import { CATEGORIES } from '../constants/categories'
+import { ICON_MAP } from '../constants/icons'
 import { apiRequest, parseApiResponse } from '../utils/api'
 
 const API_URL = '/api/cars'
@@ -20,6 +21,8 @@ function AdminCarEdit() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState(null)
+  const [allFeatures, setAllFeatures] = useState([])
+  const [selectedFeatures, setSelectedFeatures] = useState([])
 
   useEffect(() => {
     let active = true
@@ -27,8 +30,9 @@ function AdminCarEdit() {
       .then(parseApiResponse)
       .then((body) => {
         if (!active) return
-        const { brand, model, year, pricePerDay, pricePerHour, available, category } = body.data
+        const { brand, model, year, pricePerDay, pricePerHour, available, category, features } = body.data
         setForm({ brand, model, year, pricePerDay, pricePerHour, available, category: category || '' })
+        setSelectedFeatures((features || []).map((f) => f.id))
       })
       .catch((err) => setMessage({ type: 'error', text: err.message }))
       .finally(() => {
@@ -39,9 +43,27 @@ function AdminCarEdit() {
     }
   }, [plate])
 
+  useEffect(() => {
+    let active = true
+    apiRequest('/api/features')
+      .then(parseApiResponse)
+      .then((body) => {
+        if (!active) return
+        setAllFeatures(body.data || [])
+      })
+      .catch(() => {})
+    return () => { active = false }
+  }, [])
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
     setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
+  }
+
+  const toggleFeature = (featureId) => {
+    setSelectedFeatures((prev) =>
+      prev.includes(featureId) ? prev.filter((id) => id !== featureId) : [...prev, featureId]
+    )
   }
 
   const handleSubmit = async (e) => {
@@ -49,17 +71,21 @@ function AdminCarEdit() {
     setSaving(true)
     setMessage(null)
     try {
-      const params = new URLSearchParams({
-        brand: form.brand,
-        model: form.model,
-        year: Number(form.year),
-        pricePerDay: Number(form.pricePerDay),
-        pricePerHour: Number(form.pricePerHour),
-        available: form.available,
-        category: form.category,
-      })
       await parseApiResponse(
-        await authFetch(`${API_URL}/${plate}?${params}`, { method: 'PUT' }),
+        await authFetch(`${API_URL}/${plate}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            brand: form.brand,
+            model: form.model,
+            year: Number(form.year),
+            pricePerDay: Number(form.pricePerDay),
+            pricePerHour: Number(form.pricePerHour),
+            available: form.available,
+            category: form.category,
+            features: selectedFeatures.map((id) => ({ id })),
+          }),
+        }),
         'Hubo un error al actualizar el auto.'
       )
       setMessage({ type: 'success', text: 'Auto actualizado correctamente.' })
@@ -149,6 +175,33 @@ function AdminCarEdit() {
               />
               Disponible
             </label>
+
+            {allFeatures.length > 0 && (
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Features</label>
+                <div className="flex flex-wrap gap-2">
+                  {allFeatures.map((feature) => {
+                    const isSelected = selectedFeatures.includes(feature.id)
+                    const IconComp = feature.icon ? ICON_MAP[feature.icon] : null
+                    return (
+                      <button
+                        key={feature.id}
+                        type="button"
+                        onClick={() => toggleFeature(feature.id)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-full border-2 cursor-pointer transition ${
+                          isSelected
+                            ? 'border-violet-500 bg-violet-500 text-white'
+                            : 'border-gray-300 text-gray-600 hover:border-violet-400 hover:text-violet-600'
+                        }`}
+                      >
+                        {IconComp && <IconComp />}
+                        {feature.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
 
             <div className="col-span-2 flex gap-3">
               <button

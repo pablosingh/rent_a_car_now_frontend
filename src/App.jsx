@@ -11,6 +11,7 @@ import AdminCarEdit from './pages/AdminCarEdit'
 import AdminReservations from './pages/AdminReservations'
 import AdminVerifyOwners from './pages/AdminVerifyOwners'
 import AdminUsers from './pages/AdminUsers'
+import AdminFeatures from './pages/AdminFeatures'
 import OwnerPanel from './pages/OwnerPanel'
 import OwnerEmployees from './pages/OwnerEmployees'
 import Register from './pages/Register'
@@ -33,6 +34,7 @@ function App() {
           <Route path="/admin" element={<RequireAuth roles={['ADMIN']}><Admin /></RequireAuth>} />
           <Route path="/admin/owners" element={<RequireAuth roles={['ADMIN']}><AdminVerifyOwners /></RequireAuth>} />
           <Route path="/admin/users" element={<RequireAuth roles={['ADMIN']}><AdminUsers /></RequireAuth>} />
+          <Route path="/admin/features" element={<RequireAuth roles={['ADMIN']}><AdminFeatures /></RequireAuth>} />
           <Route path="/admin/cars" element={<RequireAuth roles={['ADMIN']}><AdminCars scope="all" /></RequireAuth>} />
           <Route path="/admin/cars/:plate" element={<RequireAuth roles={['ADMIN']}><CarDetail admin /></RequireAuth>} />
           <Route path="/admin/cars/:plate/edit" element={<RequireAuth roles={['ADMIN']}><AdminCarEdit /></RequireAuth>} />

@@ -12,16 +12,19 @@ const buildCategoryParam = (category) =>
 const buildSearchParam = (q) =>
   q ? `&q=${encodeURIComponent(q)}` : ''
 
-const fetchCarsPage = async (page, category, q) => {
+const buildFeatureParam = (feature) =>
+  feature ? `&feature=${encodeURIComponent(feature)}` : ''
+
+const fetchCarsPage = async (page, category, q, feature) => {
   const body = await parseApiResponse(
-    await apiRequest(`/api/cars?page=${page}&size=${PAGE_SIZE}&available=true${buildCategoryParam(category)}${buildSearchParam(q)}`)
+    await apiRequest(`/api/cars?page=${page}&size=${PAGE_SIZE}&available=true${buildCategoryParam(category)}${buildSearchParam(q)}${buildFeatureParam(feature)}`)
   )
   return body.data
 }
 
-const fetchRandomCars = async (category, q) => {
+const fetchRandomCars = async (category, q, feature) => {
   const body = await parseApiResponse(
-    await apiRequest(`/api/cars/random?limit=${PAGE_SIZE}&available=true${buildCategoryParam(category)}${buildSearchParam(q)}`)
+    await apiRequest(`/api/cars/random?limit=${PAGE_SIZE}&available=true${buildCategoryParam(category)}${buildSearchParam(q)}${buildFeatureParam(feature)}`)
   )
   return body.data
 }
@@ -33,13 +36,26 @@ function CarGrid() {
   const [totalPages, setTotalPages] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [category, setCategory] = useState('')
+  const [feature, setFeature] = useState('')
+  const [allFeatures, setAllFeatures] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState(null)
 
   useEffect(() => {
     let active = true
-    fetchRandomCars(category, q)
+    apiRequest('/api/features')
+      .then(parseApiResponse)
+      .then((body) => {
+        if (active) setAllFeatures(body.data || [])
+      })
+      .catch(() => {})
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    fetchRandomCars(category, q, feature)
       .then((data) => {
         if (!active) return
         setCars(data)
@@ -49,7 +65,7 @@ function CarGrid() {
         if (active) setError(err.message)
       })
       .then(() => {
-        if (active) return fetchCarsPage(0, category, q).then((meta) => setTotalPages(meta.totalPages))
+        if (active) return fetchCarsPage(0, category, q, feature).then((meta) => setTotalPages(meta.totalPages))
       })
       .catch(() => {
         if (active) setTotalPages(0)
@@ -60,7 +76,7 @@ function CarGrid() {
     return () => {
       active = false
     }
-  }, [category, q])
+  }, [category, q, feature])
 
   const handleGoTo = async (targetPage) => {
     const totalDisplayed = totalPages + 1
@@ -70,9 +86,9 @@ function CarGrid() {
     setError(null)
     try {
       if (targetPage === 1) {
-        setCars(await fetchRandomCars(category, q))
+        setCars(await fetchRandomCars(category, q, feature))
       } else {
-        const data = await fetchCarsPage(targetPage - 2, category, q)
+        const data = await fetchCarsPage(targetPage - 2, category, q, feature)
         setCars(data.content)
         setTotalPages(data.totalPages)
       }
@@ -87,13 +103,13 @@ function CarGrid() {
   const handleRetry = () => {
     setLoading(true)
     setError(null)
-    fetchRandomCars(category, q)
+    fetchRandomCars(category, q, feature)
       .then((data) => {
         setCars(data)
         setCurrentPage(1)
       })
       .catch((err) => setError(err.message))
-      .then(() => fetchCarsPage(0, category, q).then((meta) => setTotalPages(meta.totalPages)))
+      .then(() => fetchCarsPage(0, category, q, feature).then((meta) => setTotalPages(meta.totalPages)))
       .catch(() => setTotalPages(0))
       .finally(() => setLoading(false))
   }
@@ -104,7 +120,7 @@ function CarGrid() {
         Nuestros autos
       </h2>
 
-      <div className="mb-6">
+      <div className="mb-6 flex flex-wrap gap-3">
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
@@ -115,6 +131,19 @@ function CarGrid() {
             <option key={cat} value={cat}>{cat}</option>
           ))}
         </select>
+
+        {allFeatures.length > 0 && (
+          <select
+            value={feature}
+            onChange={(e) => setFeature(e.target.value)}
+            className="px-3 py-2 text-sm border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-violet-400 cursor-pointer"
+          >
+            <option value="">Todas las features</option>
+            {allFeatures.map((f) => (
+              <option key={f.id} value={f.name}>{f.name}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {loading && (
