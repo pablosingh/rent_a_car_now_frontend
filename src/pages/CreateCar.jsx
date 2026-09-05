@@ -249,9 +249,9 @@ function CreateCar() {
             </div>
           )}
 
-          {allFeatures.length > 0 && (
-            <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Features</label>
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Features</label>
+            {allFeatures.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {allFeatures.map((feature) => {
                   const isSelected = selectedFeatures.includes(feature.id)
@@ -273,8 +273,19 @@ function CreateCar() {
                   )
                 })}
               </div>
-            </div>
-          )}
+            ) : (
+              <p className="text-sm text-gray-500">
+                No hay features cargadas.{' '}
+                {isAdmin ? (
+                  <Link to="/admin/features" className="text-violet-600 hover:text-violet-800 underline">
+                    Crear features
+                  </Link>
+                ) : (
+                  'Contactá a un administrador para crearlas.'
+                )}
+              </p>
+            )}
+          </div>
 
           <div className="sm:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">Fotos</label>

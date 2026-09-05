@@ -13,9 +13,10 @@ function AdminCarEdit() {
   const { plate } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const { authFetch } = useAuth()
+  const { auth, authFetch } = useAuth()
 
   const listPath = location.pathname.startsWith('/mis-autos') ? '/mis-autos' : '/admin/cars'
+  const isAdmin = auth?.user?.role === 'ADMIN'
 
   const [form, setForm] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -176,9 +177,9 @@ function AdminCarEdit() {
               Disponible
             </label>
 
-            {allFeatures.length > 0 && (
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Features</label>
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Features</label>
+              {allFeatures.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {allFeatures.map((feature) => {
                     const isSelected = selectedFeatures.includes(feature.id)
@@ -200,8 +201,19 @@ function AdminCarEdit() {
                     )
                   })}
                 </div>
-              </div>
-            )}
+              ) : (
+                <p className="text-sm text-gray-500">
+                  No hay features cargadas.{' '}
+                  {isAdmin ? (
+                    <Link to="/admin/features" className="text-violet-600 hover:text-violet-800 underline">
+                      Crear features
+                    </Link>
+                  ) : (
+                    'Contactá a un administrador para crearlas.'
+                  )}
+                </p>
+              )}
+            </div>
 
             <div className="col-span-2 flex gap-3">
               <button
