@@ -200,14 +200,6 @@ function CarDetail({ admin = false }) {
             </div>
           </div>
 
-          {car.features && car.features.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-4">
-              {car.features.map((feature) => (
-                <FeatureBadge key={feature.id} feature={feature} />
-              ))}
-            </div>
-          )}
-
           {car.pricePerHour != null && (
             <p className="text-gray-500 mt-4">
               Tarifa por hora: ${car.pricePerHour}
@@ -254,6 +246,19 @@ function CarDetail({ admin = false }) {
               )}
             </div>
           )}
+
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold text-gray-800 mb-3">Características del Auto</h2>
+            {car.features && car.features.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {car.features.map((feature) => (
+                  <FeatureBadge key={feature.id} feature={feature} />
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">Este auto no tiene características cargadas.</p>
+            )}
+          </div>
         </div>
       </div>
     </div>
