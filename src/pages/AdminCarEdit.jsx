@@ -3,7 +3,7 @@ import { Link, useParams, useNavigate, useLocation } from 'react-router-dom'
 import { FaArrowLeft, FaCar } from 'react-icons/fa'
 import AdminOnly from '../components/AdminOnly/AdminOnly'
 import { useAuth } from '../context/AuthContext'
-import { CATEGORIES } from '../constants/categories'
+import { CATEGORIES as FALLBACK_CATEGORIES } from '../constants/categories'
 import { ICON_MAP } from '../constants/icons'
 import { apiRequest, parseApiResponse } from '../utils/api'
 
@@ -24,6 +24,7 @@ function AdminCarEdit() {
   const [message, setMessage] = useState(null)
   const [allFeatures, setAllFeatures] = useState([])
   const [selectedFeatures, setSelectedFeatures] = useState([])
+  const [categories, setCategories] = useState(FALLBACK_CATEGORIES)
 
   useEffect(() => {
     let active = true
@@ -51,6 +52,14 @@ function AdminCarEdit() {
       .then((body) => {
         if (!active) return
         setAllFeatures(body.data || [])
+      })
+      .catch(() => {})
+    apiRequest('/api/categories')
+      .then(parseApiResponse)
+      .then((body) => {
+        if (!active) return
+        const data = body.data || []
+        if (data.length > 0) setCategories(data.map((c) => c.name))
       })
       .catch(() => {})
     return () => { active = false }
@@ -161,7 +170,7 @@ function AdminCarEdit() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
               <select name="category" value={form.category} onChange={handleChange} required className={inputClass}>
                 <option value="">Seleccioná una categoría</option>
-                {CATEGORIES.map((cat) => (
+                {categories.map((cat) => (
                   <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>

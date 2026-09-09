@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import CarCard from '../CarCard/CarCard'
-import { CATEGORIES } from '../../constants/categories'
+import { CATEGORIES as FALLBACK_CATEGORIES } from '../../constants/categories'
 import { apiRequest, parseApiResponse } from '../../utils/api'
 
 const PAGE_SIZE = 10
@@ -38,6 +38,7 @@ function CarGrid() {
   const [category, setCategory] = useState('')
   const [feature, setFeature] = useState('')
   const [allFeatures, setAllFeatures] = useState([])
+  const [categories, setCategories] = useState(FALLBACK_CATEGORIES)
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState(null)
@@ -48,6 +49,14 @@ function CarGrid() {
       .then(parseApiResponse)
       .then((body) => {
         if (active) setAllFeatures(body.data || [])
+      })
+      .catch(() => {})
+    apiRequest('/api/categories')
+      .then(parseApiResponse)
+      .then((body) => {
+        if (!active) return
+        const data = body.data || []
+        if (data.length > 0) setCategories(data.map((c) => c.name))
       })
       .catch(() => {})
     return () => { active = false }
@@ -127,9 +136,9 @@ function CarGrid() {
           className="px-3 py-2 text-sm border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-violet-400 cursor-pointer"
         >
           <option value="">Todas las categorías</option>
-          {CATEGORIES.map((cat) => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
         </select>
 
         {allFeatures.length > 0 && (

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { FaArrowLeft, FaEdit, FaTrash, FaCar } from 'react-icons/fa'
 import AdminOnly from '../components/AdminOnly/AdminOnly'
 import { useAuth } from '../context/AuthContext'
-import { CATEGORIES } from '../constants/categories'
+import { CATEGORIES as FALLBACK_CATEGORIES } from '../constants/categories'
 import { apiRequest, parseApiResponse } from '../utils/api'
 
 const API_URL = '/api/cars'
@@ -34,9 +34,23 @@ function AdminCars({ scope = 'all' }) {
   const [currentPage, setCurrentPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [category, setCategory] = useState('')
+  const [categories, setCategories] = useState(FALLBACK_CATEGORIES)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [deleting, setDeleting] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    apiRequest('/api/categories')
+      .then(parseApiResponse)
+      .then((body) => {
+        if (!active) return
+        const data = body.data || []
+        if (data.length > 0) setCategories(data.map((c) => c.name))
+      })
+      .catch(() => {})
+    return () => { active = false }
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -118,9 +132,9 @@ function AdminCars({ scope = 'all' }) {
           className="px-3 py-2 text-sm border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-violet-400 cursor-pointer"
         >
           <option value="">Todas las categorías</option>
-          {CATEGORIES.map((cat) => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
         </select>
       </div>
 

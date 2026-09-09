@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FaArrowLeft, FaCar, FaPlus, FaTrash } from 'react-icons/fa'
 import { useAuth } from '../context/AuthContext'
-import { CATEGORIES } from '../constants/categories'
+import { CATEGORIES as FALLBACK_CATEGORIES } from '../constants/categories'
 import { ICON_MAP } from '../constants/icons'
-import { parseApiResponse } from '../utils/api'
+import { parseApiResponse, apiRequest } from '../utils/api'
 
 const API_URL = '/api/cars'
 
@@ -31,6 +31,7 @@ function CreateCar() {
   const [ownerId, setOwnerId] = useState('')
   const [allFeatures, setAllFeatures] = useState([])
   const [selectedFeatures, setSelectedFeatures] = useState([])
+  const [categories, setCategories] = useState(FALLBACK_CATEGORIES)
 
   useEffect(() => {
     if (!isAdmin) return
@@ -60,6 +61,19 @@ function CreateCar() {
       .catch(() => {})
     return () => { active = false }
   }, [authFetch])
+
+  useEffect(() => {
+    let active = true
+    apiRequest('/api/categories')
+      .then(parseApiResponse)
+      .then((body) => {
+        if (!active) return
+        const data = body.data || []
+        if (data.length > 0) setCategories(data.map((c) => c.name))
+      })
+      .catch(() => {})
+    return () => { active = false }
+  }, [])
 
   useEffect(() => {
     imagesRef.current = images
@@ -214,7 +228,7 @@ function CreateCar() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
             <select name="category" value={form.category} onChange={handleChange} required className={inputClass}>
               <option value="">Seleccioná una categoría</option>
-              {CATEGORIES.map((cat) => (
+              {categories.map((cat) => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
             </select>
