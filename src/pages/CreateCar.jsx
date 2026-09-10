@@ -31,7 +31,7 @@ function CreateCar() {
   const [ownerId, setOwnerId] = useState('')
   const [allFeatures, setAllFeatures] = useState([])
   const [selectedFeatures, setSelectedFeatures] = useState([])
-  const [categories, setCategories] = useState(FALLBACK_CATEGORIES)
+  const [categories, setCategories] = useState(FALLBACK_CATEGORIES.map((name, idx) => ({ id: idx + 1, name })))
 
   useEffect(() => {
     if (!isAdmin) return
@@ -69,7 +69,7 @@ function CreateCar() {
       .then((body) => {
         if (!active) return
         const data = body.data || []
-        if (data.length > 0) setCategories(data.map((c) => c.name))
+        if (data.length > 0) setCategories(data)
       })
       .catch(() => {})
     return () => { active = false }
@@ -133,12 +133,14 @@ function CreateCar() {
     setMessage(null)
 
     try {
+      const { category: categoryValue, ...rest } = form
       const body = await parseApiResponse(
         await authFetch(`${API_URL}${ownerId ? `?ownerId=${ownerId}` : ''}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            ...form,
+            ...rest,
+            category: categoryValue ? { id: Number(categoryValue) } : null,
             year: Number(form.year),
             pricePerDay: Number(form.pricePerDay),
             pricePerHour: Number(form.pricePerHour),
@@ -229,7 +231,7 @@ function CreateCar() {
             <select name="category" value={form.category} onChange={handleChange} required className={inputClass}>
               <option value="">Seleccioná una categoría</option>
               {categories.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
             </select>
           </div>

@@ -197,9 +197,9 @@ function AdminCars({ scope = 'all' }) {
                   </span>
                 </div>
                 <p className="text-gray-500 text-xs">{car.year}</p>
-                {car.category && (
+                {(car.category?.name || car.category) && (
                   <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 self-start">
-                    {car.category}
+                    {car.category?.name || car.category}
                   </span>
                 )}
                 <p className="text-violet-600 font-semibold text-sm">

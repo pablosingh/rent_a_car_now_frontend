@@ -22,9 +22,9 @@ function CarCard({ car }) {
         <h3 className="font-bold text-lg truncate">
           {car.brand} {car.model}
         </h3>
-        {car.category && (
+        {(car.category?.name || car.category) && (
           <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">
-            {car.category}
+            {car.category?.name || car.category}
           </span>
         )}
         <p className="text-violet-600 font-semibold text-lg mt-1">

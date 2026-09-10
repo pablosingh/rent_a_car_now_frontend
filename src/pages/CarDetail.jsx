@@ -178,10 +178,10 @@ function CarDetail({ admin = false }) {
               <FaCalendar className="text-violet-500" />
               <span>Año {car.year}</span>
             </div>
-            {car.category && (
+            {(car.category?.name || car.category) && (
               <div className="flex items-center gap-2 text-gray-600">
                 <span className="text-xs font-semibold px-2 py-1 rounded-full bg-violet-100 text-violet-700">
-                  {car.category}
+                  {car.category?.name || car.category}
                 </span>
               </div>
             )}

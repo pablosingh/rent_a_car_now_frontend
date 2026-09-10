@@ -24,7 +24,7 @@ function AdminCarEdit() {
   const [message, setMessage] = useState(null)
   const [allFeatures, setAllFeatures] = useState([])
   const [selectedFeatures, setSelectedFeatures] = useState([])
-  const [categories, setCategories] = useState(FALLBACK_CATEGORIES)
+  const [categories, setCategories] = useState(FALLBACK_CATEGORIES.map((name, idx) => ({ id: idx + 1, name })))
 
   useEffect(() => {
     let active = true
@@ -33,7 +33,8 @@ function AdminCarEdit() {
       .then((body) => {
         if (!active) return
         const { brand, model, year, pricePerDay, pricePerHour, available, category, features } = body.data
-        setForm({ brand, model, year, pricePerDay, pricePerHour, available, category: category || '' })
+        const categoryValue = category?.id ? String(category.id) : category || ''
+        setForm({ brand, model, year, pricePerDay, pricePerHour, available, category: categoryValue })
         setSelectedFeatures((features || []).map((f) => f.id))
       })
       .catch((err) => setMessage({ type: 'error', text: err.message }))
@@ -59,7 +60,7 @@ function AdminCarEdit() {
       .then((body) => {
         if (!active) return
         const data = body.data || []
-        if (data.length > 0) setCategories(data.map((c) => c.name))
+        if (data.length > 0) setCategories(data)
       })
       .catch(() => {})
     return () => { active = false }
@@ -92,7 +93,7 @@ function AdminCarEdit() {
             pricePerDay: Number(form.pricePerDay),
             pricePerHour: Number(form.pricePerHour),
             available: form.available,
-            category: form.category,
+            category: form.category ? { id: Number(form.category) } : null,
             features: selectedFeatures.map((id) => ({ id })),
           }),
         }),
@@ -171,7 +172,7 @@ function AdminCarEdit() {
               <select name="category" value={form.category} onChange={handleChange} required className={inputClass}>
                 <option value="">Seleccioná una categoría</option>
                 {categories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </select>
             </div>
