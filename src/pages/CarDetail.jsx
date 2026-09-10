@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { FaArrowLeft, FaCalendar, FaCar, FaCheckCircle, FaEdit, FaTimesCircle, FaTrash } from 'react-icons/fa'
 import AdminOnly from '../components/AdminOnly/AdminOnly'
 import FeatureBadge from '../components/FeatureBadge/FeatureBadge'
+import FavoriteButton from '../components/FavoriteButton/FavoriteButton'
 import { useAuth } from '../context/AuthContext'
 import { apiRequest, parseApiResponse } from '../utils/api'
 
@@ -144,9 +145,12 @@ function CarDetail({ admin = false }) {
         <div className="p-6 md:p-8">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">
-                {car.brand} {car.model}
-              </h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-bold text-gray-800">
+                  {car.brand} {car.model}
+                </h1>
+                {!admin && <FavoriteButton carId={car.id} />}
+              </div>
               <p className="text-violet-600 text-2xl font-bold mt-2">
                 ${car.pricePerDay}
                 <span className="text-base text-gray-500 font-normal"> /día</span>

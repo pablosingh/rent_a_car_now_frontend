@@ -18,6 +18,7 @@ import OwnerEmployees from './pages/OwnerEmployees'
 import Register from './pages/Register'
 import Login from './pages/Login'
 import Profile from './pages/Profile'
+import Favorites from './pages/Favorites'
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
           <Route path="/registro" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
+          <Route path="/favoritos" element={<RequireAuth><Favorites /></RequireAuth>} />
           <Route path="/mis-reservas" element={<RequireAuth><AdminReservations responsive={false} /></RequireAuth>} />
 
           <Route path="/admin" element={<RequireAuth roles={['ADMIN']}><Admin /></RequireAuth>} />

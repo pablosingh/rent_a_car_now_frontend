@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { FaCar, FaSearch } from 'react-icons/fa'
+import { FaCar, FaHeart, FaSearch } from 'react-icons/fa'
 import { useAuth } from '../../context/AuthContext'
 
 function Header() {
@@ -130,6 +130,15 @@ function Header() {
           >
             Home
           </Link>
+          {auth?.user && (
+            <Link
+              to="/favoritos"
+              className="px-4 py-1.5 text-sm font-semibold rounded border-2 border-pink-400 text-pink-500 hover:bg-pink-50 cursor-pointer inline-flex items-center gap-1"
+            >
+              <FaHeart className="text-xs" />
+              Favoritos
+            </Link>
+          )}
           {panelPath && (
             <Link
               to={panelPath}
