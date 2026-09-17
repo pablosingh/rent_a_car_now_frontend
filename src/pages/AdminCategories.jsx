@@ -16,6 +16,10 @@ function AdminCategories() {
   const [editingId, setEditingId] = useState(null)
   const [editName, setEditName] = useState('')
   const [editDescription, setEditDescription] = useState('')
+  const [pendingDelete, setPendingDelete] = useState(null)
+  const [pendingCount, setPendingCount] = useState(null)
+  const [countLoading, setCountLoading] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -55,17 +59,39 @@ function AdminCategories() {
     }
   }
 
-  const handleDelete = async (category) => {
-    if (!window.confirm(`¿Borrar la categoría "${category.name}"?`)) return
+  const openDeleteModal = async (category) => {
+    setPendingDelete(category)
+    setPendingCount(null)
+    setCountLoading(true)
+    try {
+      const res = await authFetch(`/api/cars?category=${encodeURIComponent(category.name)}&size=1`)
+      const body = await parseApiResponse(res)
+      const total = body.data?.totalElements
+      setPendingCount(typeof total === 'number' ? total : 0)
+    } catch {
+      setPendingCount(null)
+    } finally {
+      setCountLoading(false)
+    }
+  }
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return
+    setDeleting(true)
     try {
       await parseApiResponse(
-        await authFetch(`/api/categories/${category.id}`, { method: 'DELETE' }),
+        await authFetch(`/api/categories/${pendingDelete.id}`, { method: 'DELETE' }),
         'Error al borrar categoría.'
       )
-      setCategories((prev) => prev.filter((c) => c.id !== category.id))
-      setMessage({ type: 'success', text: 'Categoría borrada.' })
+      setCategories((prev) => prev.filter((c) => c.id !== pendingDelete.id))
+      const countText = pendingCount != null && pendingCount > 0 ? ` y ${pendingCount} ${pendingCount === 1 ? 'auto eliminado' : 'autos eliminados'}` : ''
+      setMessage({ type: 'success', text: `Categoría "${pendingDelete.name}"${countText} borrada.` })
+      setPendingDelete(null)
+      setPendingCount(null)
     } catch (err) {
       window.alert(err.message)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -204,7 +230,7 @@ function AdminCategories() {
                         <FaEdit className="text-sm" />
                       </button>
                       <button
-                        onClick={() => handleDelete(category)}
+                        onClick={() => openDeleteModal(category)}
                         className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer"
                         title="Borrar"
                       >
@@ -218,6 +244,55 @@ function AdminCategories() {
           </div>
         )}
       </div>
+
+      {pendingDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => !deleting && !countLoading && setPendingDelete(null)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-gray-800 mb-2">¿Eliminar categoría?</h3>
+            <p className="text-sm text-gray-600 mb-3">
+              Estás por eliminar la categoría <span className="font-semibold">&quot;{pendingDelete.name}&quot;</span>.
+            </p>
+            <div className="mb-5 px-3 py-3 text-sm rounded border bg-red-50 border-red-200 text-red-700">
+              {countLoading ? (
+                <span>Calculando autos afectados...</span>
+              ) : pendingCount === 0 ? (
+                <span>No hay autos en esta categoría. Se eliminará solo la categoría.</span>
+              ) : pendingCount != null ? (
+                <span>
+                  <span className="font-semibold">¡Atención!</span> Se eliminarán también <span className="font-bold">{pendingCount} {pendingCount === 1 ? 'auto' : 'autos'}</span> que pertenecen a esta categoría. Esta acción no se puede deshacer.
+                </span>
+              ) : (
+                <span>
+                  <span className="font-semibold">¡Atención!</span> Se eliminarán también <span className="font-bold">todos los autos</span> que pertenecen a esta categoría. Esta acción no se puede deshacer.
+                </span>
+              )}
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setPendingDelete(null)}
+                disabled={deleting}
+                className="px-4 py-2 text-sm font-semibold rounded border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50 cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleting || countLoading}
+                className="px-4 py-2 text-sm font-semibold rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
+              >
+                <FaTrash className="text-xs" />
+                {deleting ? 'Eliminando...' : 'Eliminar categoría y autos'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
