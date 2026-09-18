@@ -4,6 +4,7 @@ import { FaArrowLeft, FaCalendar, FaCar, FaCheckCircle, FaEdit, FaTimesCircle, F
 import AdminOnly from '../components/AdminOnly/AdminOnly'
 import FeatureBadge from '../components/FeatureBadge/FeatureBadge'
 import FavoriteButton from '../components/FavoriteButton/FavoriteButton'
+import ShareButton from '../components/ShareButton/ShareButton'
 import { useAuth } from '../context/AuthContext'
 import { apiRequest, parseApiResponse } from '../utils/api'
 
@@ -43,6 +44,35 @@ function CarDetail({ admin = false }) {
     }
     loadCar()
   }, [plate])
+
+  useEffect(() => {
+    if (!car) return
+    const url = `${window.location.origin}/car/${car.plate}`
+    const title = `${car.brand} ${car.model} ${car.year || ''} - RentaCarNow`
+    const desc = `${car.brand} ${car.model} - $${car.pricePerDay}/día${car.pricePerHour ? ` | $${car.pricePerHour}/hora` : ''} · ${car.category?.name || car.category || ''}`.trim()
+    const image = car.imagePaths?.[0] ? (car.imagePaths[0].startsWith('http') ? car.imagePaths[0] : `${window.location.origin.replace(':5173', ':8081')}${car.imagePaths[0]}`) : ''
+    document.title = title
+    const setMeta = (selector, content) => {
+      let el = document.querySelector(selector)
+      if (!el) {
+        el = document.createElement('meta')
+        const prop = selector.includes('property') ? 'property' : 'name'
+        const name = selector.match(/"([^"]+)"/)?.[1]
+        el.setAttribute(prop, name)
+        document.head.appendChild(el)
+      }
+      el.setAttribute('content', content)
+    }
+    setMeta('meta[property="og:title"]', title)
+    setMeta('meta[property="og:description"]', desc)
+    setMeta('meta[property="og:url"]', url)
+    setMeta('meta[property="og:type"]', 'product')
+    if (image) setMeta('meta[property="og:image"]', image)
+    setMeta('meta[name="twitter:card"]', 'summary_large_image')
+    setMeta('meta[name="twitter:title"]', title)
+    setMeta('meta[name="twitter:description"]', desc)
+    if (image) setMeta('meta[name="twitter:image"]', image)
+  }, [car])
 
   const snapToHalfHour = (value) => {
     if (!value || !value.includes('T')) return value
@@ -201,6 +231,7 @@ function CarDetail({ admin = false }) {
                   {car.brand} {car.model}
                 </h1>
                 {!admin && <FavoriteButton carId={car.id} />}
+                {!admin && <ShareButton car={car} size="md" />}
               </div>
               <p className="text-violet-600 text-2xl font-bold mt-2">
                 ${car.pricePerDay}
@@ -321,6 +352,7 @@ function CarDetail({ admin = false }) {
             </div>
           )}
 
+          {!admin && <ShareButton car={car} variant="floating" />}
           <div className="mt-8">
             <h2 className="text-lg font-semibold text-gray-800 mb-3">Características del Auto</h2>
             {car.features && car.features.length > 0 ? (

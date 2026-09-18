@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { FaCalendar, FaCar } from 'react-icons/fa'
 import FavoriteButton from '../FavoriteButton/FavoriteButton'
+import ShareButton from '../ShareButton/ShareButton'
 
 function CarCard({ car }) {
   return (
@@ -18,7 +19,8 @@ function CarCard({ car }) {
           )}
         </div>
       </Link>
-      <div className="absolute top-2 right-2">
+      <div className="absolute top-2 right-2 flex gap-1.5">
+        <ShareButton car={car} size="sm" />
         <FavoriteButton carId={car.id} size="sm" />
       </div>
       <Link to={`/car/${car.plate}`} className="block">
