@@ -44,6 +44,20 @@ function CarDetail({ admin = false }) {
     loadCar()
   }, [plate])
 
+  const snapToHalfHour = (value) => {
+    if (!value || !value.includes('T')) return value
+    const [date, time] = value.split('T')
+    if (!time) return value
+    const [hStr, mStr] = time.split(':')
+    const h = Number(hStr)
+    const m = Number(mStr)
+    if (Number.isNaN(h) || Number.isNaN(m)) return value
+    const snappedM = m < 30 ? '00' : '30'
+    return `${date}T${String(h).padStart(2, '0')}:${snappedM}`
+  }
+
+  const isHalfHour = (d) => d.getMinutes() % 30 === 0 && d.getSeconds() === 0 && d.getMilliseconds() === 0
+
   const preview = useMemo(() => {
     if (!startAt || !endAt || !car?.pricePerHour) return null
     const start = new Date(startAt)
@@ -86,6 +100,10 @@ function CarDetail({ admin = false }) {
     }
     if (start < new Date()) {
       setReservationMsg({ type: 'error', text: 'La reserva no puede iniciar en el pasado.' })
+      return
+    }
+    if (!isHalfHour(start) || !isHalfHour(end)) {
+      setReservationMsg({ type: 'error', text: 'Las reservas son cada media hora (minutos 00 o 30).' })
       return
     }
     setReserving(true)
@@ -263,8 +281,9 @@ function CarDetail({ admin = false }) {
                       <span>Desde</span>
                       <input
                         type="datetime-local"
+                        step="1800"
                         value={startAt}
-                        onChange={(e) => setStartAt(e.target.value)}
+                        onChange={(e) => setStartAt(snapToHalfHour(e.target.value))}
                         className="px-3 py-2 text-sm border border-gray-300 rounded bg-gray-50 focus:outline-none focus:ring-2 focus:ring-violet-400"
                       />
                     </label>
@@ -272,8 +291,9 @@ function CarDetail({ admin = false }) {
                       <span>Hasta</span>
                       <input
                         type="datetime-local"
+                        step="1800"
                         value={endAt}
-                        onChange={(e) => setEndAt(e.target.value)}
+                        onChange={(e) => setEndAt(snapToHalfHour(e.target.value))}
                         className="px-3 py-2 text-sm border border-gray-300 rounded bg-gray-50 focus:outline-none focus:ring-2 focus:ring-violet-400"
                       />
                     </label>
@@ -284,7 +304,7 @@ function CarDetail({ admin = false }) {
                       {preview.hasDiscount && <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold">10% descuento aplicado</span>}
                     </p>
                   )}
-                  <p className="text-xs text-gray-400">Se requiere 1h de limpieza entre reservas.</p>
+                  <p className="text-xs text-gray-400">Reservas cada 30 min (00 o 30). Se requiere 1h de limpieza entre reservas.</p>
                   <button
                     onClick={handleReserve}
                     disabled={!car.available || reserving || !startAt || !endAt}
