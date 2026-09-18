@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { FaArrowLeft, FaCalendar, FaCar, FaCheckCircle, FaEdit, FaTimesCircle, FaTrash } from 'react-icons/fa'
 import AdminOnly from '../components/AdminOnly/AdminOnly'
@@ -17,7 +17,8 @@ function CarDetail({ admin = false }) {
   const [error, setError] = useState(null)
   const [selectedImage, setSelectedImage] = useState(0)
   const [deleting, setDeleting] = useState(false)
-  const [days, setDays] = useState(1)
+  const [startAt, setStartAt] = useState('')
+  const [endAt, setEndAt] = useState('')
   const [reserving, setReserving] = useState(false)
   const [reservationMsg, setReservationMsg] = useState(null)
 
@@ -43,6 +44,21 @@ function CarDetail({ admin = false }) {
     loadCar()
   }, [plate])
 
+  const preview = useMemo(() => {
+    if (!startAt || !endAt || !car?.pricePerHour) return null
+    const start = new Date(startAt)
+    const end = new Date(endAt)
+    if (isNaN(start) || isNaN(end) || end <= start) return null
+    const minutes = (end - start) / 60000
+    let hours = Math.ceil(minutes / 60)
+    if (hours < 1) hours = 1
+    let total = hours * car.pricePerHour
+    const durationHours = (end - start) / 3600000
+    const hasDiscount = durationHours > 48
+    if (hasDiscount) total = total * 0.9
+    return { hours, total: total.toFixed(2), hasDiscount }
+  }, [startAt, endAt, car])
+
   const handleDelete = async () => {
     if (!window.confirm(`¿Seguro que querés borrar ${car.brand} ${car.model} (${car.plate})?`)) return
     setDeleting(true)
@@ -58,6 +74,20 @@ function CarDetail({ admin = false }) {
 
   const handleReserve = async () => {
     if (!auth?.user || !car) return
+    if (!startAt || !endAt) {
+      setReservationMsg({ type: 'error', text: 'Seleccioná fecha y hora de inicio y fin.' })
+      return
+    }
+    const start = new Date(startAt)
+    const end = new Date(endAt)
+    if (isNaN(start) || isNaN(end) || end <= start) {
+      setReservationMsg({ type: 'error', text: 'La fecha de fin debe ser posterior al inicio.' })
+      return
+    }
+    if (start < new Date()) {
+      setReservationMsg({ type: 'error', text: 'La reserva no puede iniciar en el pasado.' })
+      return
+    }
     setReserving(true)
     setReservationMsg(null)
     try {
@@ -65,13 +95,16 @@ function CarDetail({ admin = false }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          durationInDays: Number(days),
+          startAt: start.toISOString(),
+          endAt: end.toISOString(),
           carId: car.id,
           userId: auth.user.id,
         }),
       })
       await parseApiResponse(res, 'Hubo un error al reservar.')
       setReservationMsg({ type: 'success', text: 'Reserva creada correctamente.' })
+      setStartAt('')
+      setEndAt('')
     } catch (err) {
       setReservationMsg({ type: 'error', text: err.message })
     } finally {
@@ -206,7 +239,7 @@ function CarDetail({ admin = false }) {
 
           {car.pricePerHour != null && (
             <p className="text-gray-500 mt-4">
-              Tarifa por hora: ${car.pricePerHour}
+              Tarifa por hora: ${car.pricePerHour} {preview?.hasDiscount && <span className="text-green-600 font-semibold">· 10% OFF &gt;48hs</span>}
             </p>
           )}
 
@@ -224,21 +257,38 @@ function CarDetail({ admin = false }) {
                 </p>
               )}
               {auth?.user ? (
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                  <label className="flex items-center gap-2 text-sm text-gray-600">
-                    Días
-                    <input
-                      type="number"
-                      min="1"
-                      value={days}
-                      onChange={(e) => setDays(e.target.value)}
-                      className="w-20 px-3 py-2 text-sm border border-gray-300 rounded bg-gray-50 focus:outline-none focus:ring-2 focus:ring-violet-400"
-                    />
-                  </label>
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <label className="flex flex-col gap-1 text-sm text-gray-600 flex-1">
+                      <span>Desde</span>
+                      <input
+                        type="datetime-local"
+                        value={startAt}
+                        onChange={(e) => setStartAt(e.target.value)}
+                        className="px-3 py-2 text-sm border border-gray-300 rounded bg-gray-50 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1 text-sm text-gray-600 flex-1">
+                      <span>Hasta</span>
+                      <input
+                        type="datetime-local"
+                        value={endAt}
+                        onChange={(e) => setEndAt(e.target.value)}
+                        className="px-3 py-2 text-sm border border-gray-300 rounded bg-gray-50 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                      />
+                    </label>
+                  </div>
+                  {preview && (
+                    <p className="text-sm text-gray-700">
+                      {preview.hours} hora(s) · Total: <span className="font-bold text-violet-600">${preview.total}</span>
+                      {preview.hasDiscount && <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold">10% descuento aplicado</span>}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-400">Se requiere 1h de limpieza entre reservas.</p>
                   <button
                     onClick={handleReserve}
-                    disabled={!car.available || reserving}
-                    className="px-8 py-3 text-lg font-semibold rounded-lg bg-violet-500 text-white hover:bg-violet-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!car.available || reserving || !startAt || !endAt}
+                    className="px-8 py-3 text-lg font-semibold rounded-lg bg-violet-500 text-white hover:bg-violet-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed self-start"
                   >
                     {reserving ? 'Reservando...' : 'Reservar ahora'}
                   </button>

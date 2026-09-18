@@ -5,6 +5,25 @@ import AdminOnly from '../components/AdminOnly/AdminOnly'
 import { useAuth } from '../context/AuthContext'
 import { parseApiResponse } from '../utils/api'
 
+function formatBA(instant) {
+  if (!instant) return '-'
+  return new Date(instant).toLocaleString('es-AR', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function durationHours(startAt, endAt) {
+  if (!startAt || !endAt) return null
+  const ms = new Date(endAt) - new Date(startAt)
+  if (isNaN(ms) || ms <= 0) return null
+  return Math.ceil(ms / 3600000)
+}
+
 function AdminReservations({ title = 'Reservas', responsive = true }) {
   const location = useLocation()
   const { authFetch } = useAuth()
@@ -104,7 +123,10 @@ function AdminReservations({ title = 'Reservas', responsive = true }) {
 
           {!loading && reservations.length > 0 && (
             <ul className="divide-y divide-gray-100">
-              {reservations.map((r) => (
+              {reservations.map((r) => {
+                const hours = durationHours(r.startAt, r.endAt)
+                const hasDiscount = hours != null && hours > 48
+                return (
                 <li key={r.id} className="py-4 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="font-semibold text-gray-800">
@@ -114,7 +136,14 @@ function AdminReservations({ title = 'Reservas', responsive = true }) {
                     <p className="text-sm text-gray-500">
                       Cliente: {r.user?.name} {r.user?.lastName} ({r.user?.email})
                     </p>
-                    <p className="text-xs text-gray-400">Duración: {r.durationInDays} día(s)</p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {formatBA(r.startAt)} → {formatBA(r.endAt)}
+                      {hours != null && <span className="text-gray-400 ml-2">({hours}h)</span>}
+                    </p>
+                    <p className="text-sm font-semibold text-violet-600 mt-1">
+                      Total: ${r.totalPrice != null ? Number(r.totalPrice).toFixed(2) : '-'}
+                      {hasDiscount && <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold">10% OFF &gt;48h</span>}
+                    </p>
                   </div>
                   <button
                     onClick={() => handleDelete(r)}
@@ -125,7 +154,8 @@ function AdminReservations({ title = 'Reservas', responsive = true }) {
                     Borrar
                   </button>
                 </li>
-              ))}
+                )
+              })}
             </ul>
           )}
         </div>
