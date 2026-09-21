@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { FaArrowLeft, FaCalendarCheck, FaTrash } from 'react-icons/fa'
+import { FaArrowLeft, FaCalendarCheck, FaTrash, FaTruck, FaCheckCircle, FaBan, FaUndo } from 'react-icons/fa'
 import AdminOnly from '../components/AdminOnly/AdminOnly'
 import { useAuth } from '../context/AuthContext'
 import { parseApiResponse } from '../utils/api'
@@ -24,13 +24,23 @@ function durationHours(startAt, endAt) {
   return Math.ceil(ms / 3600000)
 }
 
+const statusInfo = {
+  PENDING: { label: 'Pendiente', cls: 'bg-amber-100 text-amber-700 border-amber-200' },
+  DISPATCHED: { label: 'Despachada', cls: 'bg-blue-100 text-blue-700 border-blue-200' },
+  COMPLETED: { label: 'Completada', cls: 'bg-green-100 text-green-700 border-green-200' },
+  CANCELLED: { label: 'Cancelada', cls: 'bg-red-100 text-red-700 border-red-200' },
+}
+
 function AdminReservations({ title = 'Reservas', responsive = true }) {
   const location = useLocation()
-  const { authFetch } = useAuth()
+  const { auth, authFetch } = useAuth()
   const [reservations, setReservations] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [deleting, setDeleting] = useState(false)
+  const [actingId, setActingId] = useState(null)
+
+  const role = auth?.user?.role
+  const isStaff = role === 'OWNER' || role === 'EMPLOYEE' || role === 'ADMIN'
 
   const backTo = location.pathname.startsWith('/admin')
     ? '/admin'
@@ -72,9 +82,32 @@ function AdminReservations({ title = 'Reservas', responsive = true }) {
     }
   }, [fetchReservations])
 
+  const handleAction = async (reservation, action) => {
+    const labels = { dispatch: 'despachar', complete: 'completar', cancel: 'cancelar', revert: 'revertir' }
+    const confirmMsg =
+      action === 'dispatch'
+        ? `¿Despachar la reserva #${reservation.id} (${reservation.car?.plate})?`
+        : action === 'complete'
+          ? `¿Marcar como completada la reserva #${reservation.id}?`
+          : action === 'cancel'
+            ? `¿Cancelar la reserva #${reservation.id}?`
+            : `¿Revertir la reserva #${reservation.id} al estado anterior?`
+    if (!window.confirm(confirmMsg)) return
+    setActingId(reservation.id)
+    try {
+      const res = await authFetch(`/api/reservations/${reservation.id}/${action}`, { method: 'POST' })
+      const body = await parseApiResponse(res, `Error al ${labels[action]} la reserva.`)
+      setReservations((prev) => prev.map((r) => (r.id === reservation.id ? body.data : r)))
+    } catch (err) {
+      window.alert(err.message)
+    } finally {
+      setActingId(null)
+    }
+  }
+
   const handleDelete = async (reservation) => {
     if (!window.confirm('¿Seguro que querés borrar esta reserva?')) return
-    setDeleting(true)
+    setActingId(reservation.id)
     try {
       const res = await authFetch(`/api/reservations/${reservation.id}`, { method: 'DELETE' })
       await parseApiResponse(res, 'Hubo un error al borrar la reserva.')
@@ -82,7 +115,7 @@ function AdminReservations({ title = 'Reservas', responsive = true }) {
     } catch (err) {
       window.alert(err.message)
     } finally {
-      setDeleting(false)
+      setActingId(null)
     }
   }
 
@@ -126,12 +159,23 @@ function AdminReservations({ title = 'Reservas', responsive = true }) {
               {reservations.map((r) => {
                 const hours = durationHours(r.startAt, r.endAt)
                 const hasDiscount = hours != null && hours > 48
+                const st = statusInfo[r.status] || statusInfo.PENDING
+                const isPending = r.status === 'PENDING' || !r.status
+                const isDispatched = r.status === 'DISPATCHED'
+                const isCompleted = r.status === 'COMPLETED'
+                const isCancelled = r.status === 'CANCELLED'
+                const canDispatch = isPending && isStaff
+                const canComplete = isDispatched && isStaff
+                const canCancel = !isCompleted && !isCancelled && (isStaff || isPending)
+                const canRevert = (isDispatched || isCompleted || isCancelled) && isStaff
+                const busy = actingId === r.id
                 return (
                 <li key={r.id} className="py-4 flex flex-wrap items-center justify-between gap-3">
-                  <div>
+                  <div className="flex-1 min-w-[220px]">
                     <p className="font-semibold text-gray-800">
                       {r.car?.brand} {r.car?.model}
                       <span className="text-xs text-gray-400 ml-2">({r.car?.plate})</span>
+                      <span className={`ml-2 text-xs px-2 py-0.5 rounded-full border font-semibold ${st.cls}`}>{st.label}</span>
                     </p>
                     <p className="text-sm text-gray-500">
                       Cliente: {r.user?.name} {r.user?.lastName} ({r.user?.email})
@@ -144,15 +188,72 @@ function AdminReservations({ title = 'Reservas', responsive = true }) {
                       Total: ${r.totalPrice != null ? Number(r.totalPrice).toFixed(2) : '-'}
                       {hasDiscount && <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold">10% OFF &gt;48h</span>}
                     </p>
+                    {r.dispatchedAt && (
+                      <p className="text-xs text-blue-600 mt-1">
+                        Despachada: {formatBA(r.dispatchedAt)}{r.dispatchedBy ? ` por ${r.dispatchedBy.name} ${r.dispatchedBy.lastName}` : ''}
+                      </p>
+                    )}
+                    {r.completedAt && (
+                      <p className="text-xs text-green-600">
+                        Completada: {formatBA(r.completedAt)}{r.completedBy ? ` por ${r.completedBy.name} ${r.completedBy.lastName}` : ''}
+                      </p>
+                    )}
+                    {r.cancelledAt && (
+                      <p className="text-xs text-red-600">
+                        Cancelada: {formatBA(r.cancelledAt)}
+                      </p>
+                    )}
                   </div>
-                  <button
-                    onClick={() => handleDelete(r)}
-                    disabled={deleting}
-                    className="flex items-center gap-1 px-3 py-1.5 text-sm font-semibold rounded border-2 border-red-500 text-red-500 hover:bg-red-50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <FaTrash />
-                    Borrar
-                  </button>
+                  <div className="flex flex-wrap gap-1.5 items-center">
+                    {canDispatch && (
+                      <button
+                        onClick={() => handleAction(r, 'dispatch')}
+                        disabled={busy}
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        <FaTruck className="text-xs" />
+                        Despachar
+                      </button>
+                    )}
+                    {canComplete && (
+                      <button
+                        onClick={() => handleAction(r, 'complete')}
+                        disabled={busy}
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        <FaCheckCircle className="text-xs" />
+                        Completar
+                      </button>
+                    )}
+                    {canCancel && (
+                      <button
+                        onClick={() => handleAction(r, 'cancel')}
+                        disabled={busy}
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded border border-amber-400 text-amber-600 hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        <FaBan className="text-xs" />
+                        Cancelar
+                      </button>
+                    )}
+                    {canRevert && (
+                      <button
+                        onClick={() => handleAction(r, 'revert')}
+                        disabled={busy}
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        <FaUndo className="text-xs" />
+                        Revertir
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDelete(r)}
+                      disabled={busy}
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded border-2 border-red-500 text-red-500 hover:bg-red-50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <FaTrash />
+                      Borrar
+                    </button>
+                  </div>
                 </li>
                 )
               })}
