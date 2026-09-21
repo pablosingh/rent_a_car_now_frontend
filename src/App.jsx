@@ -19,6 +19,8 @@ import Register from './pages/Register'
 import Login from './pages/Login'
 import Profile from './pages/Profile'
 import Favorites from './pages/Favorites'
+import Policies from './pages/Policies'
+import AdminPolicies from './pages/AdminPolicies'
 
 function App() {
   return (
@@ -30,6 +32,7 @@ function App() {
           <Route path="/car/:plate" element={<CarDetail />} />
           <Route path="/registro" element={<Register />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/politicas" element={<Policies />} />
           <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
           <Route path="/favoritos" element={<RequireAuth><Favorites /></RequireAuth>} />
           <Route path="/mis-reservas" element={<RequireAuth><AdminReservations responsive={false} /></RequireAuth>} />
@@ -39,6 +42,7 @@ function App() {
           <Route path="/admin/users" element={<RequireAuth roles={['ADMIN']}><AdminUsers /></RequireAuth>} />
           <Route path="/admin/features" element={<RequireAuth roles={['ADMIN']}><AdminFeatures /></RequireAuth>} />
           <Route path="/admin/categories" element={<RequireAuth roles={['ADMIN']}><AdminCategories /></RequireAuth>} />
+          <Route path="/admin/policies" element={<RequireAuth roles={['ADMIN']}><AdminPolicies /></RequireAuth>} />
           <Route path="/admin/cars" element={<RequireAuth roles={['ADMIN']}><AdminCars scope="all" /></RequireAuth>} />
           <Route path="/admin/cars/:plate" element={<RequireAuth roles={['ADMIN']}><CarDetail admin /></RequireAuth>} />
           <Route path="/admin/cars/:plate/edit" element={<RequireAuth roles={['ADMIN']}><AdminCarEdit /></RequireAuth>} />
