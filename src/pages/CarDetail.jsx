@@ -5,6 +5,7 @@ import AdminOnly from '../components/AdminOnly/AdminOnly'
 import FeatureBadge from '../components/FeatureBadge/FeatureBadge'
 import FavoriteButton from '../components/FavoriteButton/FavoriteButton'
 import ShareButton from '../components/ShareButton/ShareButton'
+import StarRating from '../components/StarRating/StarRating'
 import { useAuth } from '../context/AuthContext'
 import { apiRequest, parseApiResponse } from '../utils/api'
 
@@ -22,6 +23,9 @@ function CarDetail({ admin = false }) {
   const [endAt, setEndAt] = useState('')
   const [reserving, setReserving] = useState(false)
   const [reservationMsg, setReservationMsg] = useState(null)
+  const [ratingAvg, setRatingAvg] = useState(0)
+  const [ratingCount, setRatingCount] = useState(0)
+  const [ratings, setRatings] = useState([])
 
   const listPath = location.pathname.startsWith('/mis-autos') ? '/mis-autos' : '/admin/cars'
 
@@ -44,6 +48,29 @@ function CarDetail({ admin = false }) {
     }
     loadCar()
   }, [plate])
+
+  useEffect(() => {
+    if (!car) return
+    let active = true
+    fetch(`/api/ratings/car/${car.id}/average`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((body) => {
+        if (active && body?.data) {
+          setRatingAvg(body.data.average)
+          setRatingCount(body.data.count)
+        }
+      })
+      .catch(() => {})
+    fetch(`/api/ratings/car/${car.id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((body) => {
+        if (active && body?.data) setRatings(body.data)
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [car])
 
   useEffect(() => {
     if (!car) return
@@ -237,6 +264,13 @@ function CarDetail({ admin = false }) {
                 ${car.pricePerDay}
                 <span className="text-base text-gray-500 font-normal"> /día</span>
               </p>
+              <div className="mt-2">
+                {ratingCount > 0 ? (
+                  <StarRating value={ratingAvg} readonly size="md" showValue count={ratingCount} />
+                ) : (
+                  <span className="text-sm text-gray-400">Sin valoraciones aún</span>
+                )}
+              </div>
             </div>
             {admin && (
               <div className="flex gap-2">
@@ -363,6 +397,31 @@ function CarDetail({ admin = false }) {
               </div>
             ) : (
               <p className="text-sm text-gray-500">Este auto no tiene características cargadas.</p>
+            )}
+          </div>
+
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold text-gray-800 mb-3">Valoraciones</h2>
+            {ratingCount === 0 ? (
+              <p className="text-sm text-gray-500">Este auto aún no tiene valoraciones.</p>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 mb-4">
+                  <StarRating value={ratingAvg} readonly size="md" showValue count={ratingCount} />
+                </div>
+                <ul className="divide-y divide-gray-100">
+                  {ratings.map((r) => (
+                    <li key={r.id} className="py-3">
+                      <div className="flex items-center gap-2">
+                        <StarRating value={r.score} readonly size="sm" />
+                        <span className="text-sm font-semibold text-gray-700">{r.user?.name} {r.user?.lastName}</span>
+                        <span className="text-xs text-gray-400">{new Date(r.createdAt).toLocaleDateString('es-AR')}</span>
+                      </div>
+                      {r.comment && <p className="text-sm text-gray-600 mt-1">{r.comment}</p>}
+                    </li>
+                  ))}
+                </ul>
+              </>
             )}
           </div>
         </div>

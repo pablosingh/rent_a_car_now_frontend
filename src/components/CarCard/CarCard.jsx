@@ -1,9 +1,29 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FaCalendar, FaCar } from 'react-icons/fa'
 import FavoriteButton from '../FavoriteButton/FavoriteButton'
 import ShareButton from '../ShareButton/ShareButton'
+import StarRating from '../StarRating/StarRating'
 
 function CarCard({ car }) {
+  const [avg, setAvg] = useState(null)
+  const [count, setCount] = useState(null)
+
+  useEffect(() => {
+    let active = true
+    fetch(`/api/ratings/car/${car.id}/average`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((body) => {
+        if (active && body?.data) {
+          setAvg(body.data.average)
+          setCount(body.data.count)
+        }
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [car.id])
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow relative">
       <Link to={`/car/${car.plate}`} className="block">
@@ -41,6 +61,11 @@ function CarCard({ car }) {
             <FaCalendar className="text-xs" />
             {car.year}
           </p>
+          {count != null && count > 0 && (
+            <div className="mt-2">
+              <StarRating value={avg} readonly size="sm" showValue count={count} />
+            </div>
+          )}
         </div>
       </Link>
     </div>
