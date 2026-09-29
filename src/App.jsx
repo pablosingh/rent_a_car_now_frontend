@@ -21,6 +21,7 @@ import Profile from './pages/Profile'
 import Favorites from './pages/Favorites'
 import Policies from './pages/Policies'
 import AdminPolicies from './pages/AdminPolicies'
+import ReservationHistory from './pages/ReservationHistory'
 
 function App() {
   return (
@@ -36,6 +37,8 @@ function App() {
           <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
           <Route path="/favoritos" element={<RequireAuth><Favorites /></RequireAuth>} />
           <Route path="/mis-reservas" element={<RequireAuth><AdminReservations responsive={false} /></RequireAuth>} />
+          <Route path="/historial" element={<RequireAuth><ReservationHistory /></RequireAuth>} />
+          <Route path="/historial/:userId" element={<RequireAuth roles={['ADMIN']}><ReservationHistory /></RequireAuth>} />
 
           <Route path="/admin" element={<RequireAuth roles={['ADMIN']}><Admin /></RequireAuth>} />
           <Route path="/admin/owners" element={<RequireAuth roles={['ADMIN']}><AdminVerifyOwners /></RequireAuth>} />

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { FaCar, FaHeart, FaSearch } from 'react-icons/fa'
+import { FaCar, FaHeart, FaSearch, FaClock } from 'react-icons/fa'
 import { useAuth } from '../../context/AuthContext'
 
 function Header() {
@@ -137,6 +137,15 @@ function Header() {
             >
               <FaHeart className="text-xs" />
               Favoritos
+            </Link>
+          )}
+          {auth?.user && (
+            <Link
+              to="/historial"
+              className="px-4 py-1.5 text-sm font-semibold rounded border-2 border-violet-500 text-violet-500 hover:bg-violet-50 cursor-pointer inline-flex items-center gap-1"
+            >
+              <FaClock className="text-xs" />
+              Historial
             </Link>
           )}
           {panelPath && (
