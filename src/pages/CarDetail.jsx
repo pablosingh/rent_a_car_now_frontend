@@ -6,6 +6,7 @@ import FeatureBadge from '../components/FeatureBadge/FeatureBadge'
 import FavoriteButton from '../components/FavoriteButton/FavoriteButton'
 import ShareButton from '../components/ShareButton/ShareButton'
 import StarRating from '../components/StarRating/StarRating'
+import Calendar from '../components/Calendar/Calendar'
 import { useAuth } from '../context/AuthContext'
 import { apiRequest, parseApiResponse } from '../utils/api'
 
@@ -114,6 +115,11 @@ function CarDetail({ admin = false }) {
   }
 
   const isHalfHour = (d) => d.getMinutes() % 30 === 0 && d.getSeconds() === 0 && d.getMilliseconds() === 0
+
+  const handleCalendarSelect = (dateStr) => {
+    setStartAt(`${dateStr}T09:00`)
+    setEndAt(`${dateStr}T10:00`)
+  }
 
   const preview = useMemo(() => {
     if (!startAt || !endAt || !car?.pricePerHour) return null
@@ -325,6 +331,11 @@ function CarDetail({ admin = false }) {
               Tarifa por hora: ${car.pricePerHour} {preview?.hasDiscount && <span className="text-green-600 font-semibold">· 10% OFF &gt;48hs</span>}
             </p>
           )}
+
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold text-gray-800 mb-3">Disponibilidad</h2>
+            <Calendar carId={car.id} onSelectRange={!admin ? handleCalendarSelect : undefined} />
+          </div>
 
           {!admin && (
             <div className="mt-8">
