@@ -10,6 +10,10 @@ function Profile() {
   const fileInputRef = useRef(null)
   const [uploading, setUploading] = useState(false)
   const [message, setMessage] = useState(null)
+  const [editingPhone, setEditingPhone] = useState(false)
+  const [phone, setPhone] = useState(auth?.user?.phone || '')
+  const [phoneError, setPhoneError] = useState(null)
+  const [savingPhone, setSavingPhone] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -49,6 +53,31 @@ function Profile() {
       setMessage({ type: 'error', text: err.message })
     } finally {
       setUploading(false)
+    }
+  }
+
+  const handleSavePhone = async () => {
+    const value = (phone || '').trim()
+    if (value && !/^\+?[0-9\s\-().]{8,20}$/.test(value)) {
+      setPhoneError('Ingresá un teléfono válido (ej +5491155556666).')
+      return
+    }
+    setPhoneError(null)
+    setSavingPhone(true)
+    try {
+      const res = await authFetch(`/api/users/${auth.user.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: value || '' }),
+      })
+      const body = await parseApiResponse(res, 'Hubo un error al guardar el teléfono.')
+      setUser(body.data)
+      setEditingPhone(false)
+      setMessage({ type: 'success', text: 'WhatsApp actualizado.' })
+    } catch (err) {
+      setPhoneError(err.message)
+    } finally {
+      setSavingPhone(false)
     }
   }
 
@@ -107,6 +136,43 @@ function Profile() {
             {auth.user.name} {auth.user.lastName}
           </h1>
           <p className="text-gray-500 mt-1">{auth.user.email}</p>
+          {auth.user.phone && <p className="text-gray-500 mt-1">WhatsApp: {auth.user.phone}</p>}
+
+          <div className="mt-4">
+            {editingPhone ? (
+              <div className="flex flex-col gap-2">
+                <input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+5491155556666"
+                  className="px-3 py-2 text-sm border border-gray-300 rounded bg-gray-50 focus:outline-none focus:ring-2 focus:ring-violet-400 text-left"
+                />
+                {phoneError && <p className="text-xs text-red-600">{phoneError}</p>}
+                <div className="flex gap-2 justify-center">
+                  <button
+                    onClick={handleSavePhone}
+                    disabled={savingPhone}
+                    className="px-4 py-1.5 text-xs font-semibold rounded bg-violet-500 text-white hover:bg-violet-600 disabled:opacity-50 cursor-pointer"
+                  >
+                    Guardar
+                  </button>
+                  <button
+                    onClick={() => { setEditingPhone(false); setPhone(auth.user.phone || ''); setPhoneError(null) }}
+                    className="px-4 py-1.5 text-xs font-semibold rounded border border-gray-300 text-gray-600 hover:bg-gray-50 cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setEditingPhone(true); setPhone(auth.user.phone || '') }}
+                className="text-xs font-semibold text-violet-600 hover:text-violet-800 underline cursor-pointer"
+              >
+                {auth.user.phone ? 'Editar WhatsApp' : 'Agregar WhatsApp'}
+              </button>
+            )}
+          </div>
 
           <span
             className={`inline-flex items-center gap-1 mt-4 px-4 py-1.5 text-sm font-semibold rounded-full ${currentRole.cls}`}

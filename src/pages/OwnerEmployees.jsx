@@ -11,6 +11,7 @@ const emptyForm = {
   lastName: '',
   email: '',
   password: '',
+  phone: '',
 }
 
 function OwnerEmployees() {
@@ -65,6 +66,7 @@ function OwnerEmployees() {
       fd.append('lastName', form.lastName)
       fd.append('email', form.email)
       fd.append('password', form.password)
+      if (form.phone && form.phone.trim()) fd.append('phone', form.phone.trim())
       const res = await authFetch(`${API_URL}/employees`, { method: 'POST', body: fd })
       const body = await parseApiResponse(res, 'Hubo un error al crear el empleado.')
       setEmployees((prev) => [...prev, body.data])
@@ -139,6 +141,10 @@ function OwnerEmployees() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
               <input name="password" type="password" value={form.password} onChange={handleChange} required minLength={6} className={inputClass} />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp (opcional)</label>
+              <input name="phone" value={form.phone} onChange={handleChange} placeholder="+5491155556666" className={inputClass} />
+            </div>
             <div className="sm:col-span-2">
               <button
                 type="submit"
@@ -166,6 +172,7 @@ function OwnerEmployees() {
                     {employee.name} {employee.lastName}
                   </p>
                   <p className="text-sm text-gray-500">{employee.email}</p>
+                  {employee.phone && <p className="text-sm text-gray-500">WhatsApp: {employee.phone}</p>}
                 </div>
                 <button
                   onClick={() => handleDelete(employee)}

@@ -9,6 +9,7 @@ const emptyForm = {
   name: '',
   lastName: '',
   email: '',
+  phone: '',
   password: '',
   confirmPassword: '',
   role: 'USER',
@@ -44,6 +45,9 @@ function Register() {
     } else if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) {
       next.email = 'Ingresá un email válido.'
     }
+    if (form.phone && form.phone.trim() && !/^\+?[0-9\s\-().]{8,20}$/.test(form.phone.trim())) {
+      next.phone = 'Ingresá un teléfono válido (ej +5491155556666).'
+    }
     if (!form.password) {
       next.password = 'La contraseña es obligatoria.'
     } else if (form.password.length < 6) {
@@ -72,6 +76,7 @@ function Register() {
       fd.append('email', form.email)
       fd.append('password', form.password)
       fd.append('role', form.role)
+      if (form.phone && form.phone.trim()) fd.append('phone', form.phone.trim())
       if (photo) fd.append('file', photo)
       const res = await apiRequest(API_URL, {
         method: 'POST',
@@ -149,6 +154,22 @@ function Register() {
               className={`${inputClass} ${errors.email ? errorClass : ''}`}
             />
             {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
+          </div>
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp (opcional)</label>
+            <input
+              name="phone"
+              value={form.phone}
+              onChange={handleChange}
+              placeholder="+5491155556666"
+              className={`${inputClass} ${errors.phone ? errorClass : ''}`}
+            />
+            {errors.phone && <p className="text-xs text-red-600 mt-1">{errors.phone}</p>}
+            {form.role === 'OWNER' && (
+              <p className="text-xs text-gray-500 mt-1">
+                Los clientes te contactarán por WhatsApp solo si tienen una reserva de tus autos.
+              </p>
+            )}
           </div>
           <div className="sm:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de cuenta</label>

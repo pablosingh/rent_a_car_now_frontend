@@ -5,6 +5,7 @@ import AdminOnly from '../components/AdminOnly/AdminOnly'
 import FeatureBadge from '../components/FeatureBadge/FeatureBadge'
 import FavoriteButton from '../components/FavoriteButton/FavoriteButton'
 import ShareButton from '../components/ShareButton/ShareButton'
+import ContactOwnerButton from '../components/ContactOwnerButton/ContactOwnerButton'
 import StarRating from '../components/StarRating/StarRating'
 import Calendar from '../components/Calendar/Calendar'
 import { useAuth } from '../context/AuthContext'
@@ -27,6 +28,7 @@ function CarDetail({ admin = false }) {
   const [ratingAvg, setRatingAvg] = useState(0)
   const [ratingCount, setRatingCount] = useState(0)
   const [ratings, setRatings] = useState([])
+  const [canContact, setCanContact] = useState(null)
 
   const listPath = location.pathname.startsWith('/mis-autos') ? '/mis-autos' : '/admin/cars'
 
@@ -72,6 +74,21 @@ function CarDetail({ admin = false }) {
       active = false
     }
   }, [car])
+
+  useEffect(() => {
+    if (!car || admin || !auth?.user) return
+    let active = true
+    authFetch(`/api/cars/${car.id}/contact`)
+      .then((r) => {
+        if (active) setCanContact(r.ok ? car.id : null)
+      })
+      .catch(() => {
+        if (active) setCanContact(null)
+      })
+    return () => {
+      active = false
+    }
+  }, [car, admin, auth, authFetch])
 
   useEffect(() => {
     if (!car) return
@@ -352,6 +369,11 @@ function CarDetail({ admin = false }) {
               )}
               {auth?.user ? (
                 <div className="flex flex-col gap-3">
+                  {canContact === car.id && (
+                    <div className="flex flex-wrap gap-2">
+                      <ContactOwnerButton carId={car.id} />
+                    </div>
+                  )}
                   <div className="flex flex-col sm:flex-row gap-3">
                     <label className="flex flex-col gap-1 text-sm text-gray-600 flex-1">
                       <span>Desde</span>

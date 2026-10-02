@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { FaArrowLeft, FaCalendarCheck, FaTrash, FaTruck, FaCheckCircle, FaBan, FaUndo, FaStar } from 'react-icons/fa'
 import AdminOnly from '../components/AdminOnly/AdminOnly'
 import StarRating from '../components/StarRating/StarRating'
+import ContactOwnerButton from '../components/ContactOwnerButton/ContactOwnerButton'
 import { useAuth } from '../context/AuthContext'
 import { parseApiResponse } from '../utils/api'
 
@@ -343,6 +344,9 @@ function AdminReservations({ title = 'Reservas', responsive = true }) {
                       <FaTrash />
                       Borrar
                     </button>
+                    {!isStaff && !isCancelled && (
+                      <ContactOwnerButton reservationId={r.id} size="sm" />
+                    )}
                   </div>
                   </div>
                   {isCompleted && (
