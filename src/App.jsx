@@ -17,6 +17,8 @@ import OwnerPanel from './pages/OwnerPanel'
 import OwnerEmployees from './pages/OwnerEmployees'
 import Register from './pages/Register'
 import Login from './pages/Login'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 import Profile from './pages/Profile'
 import Favorites from './pages/Favorites'
 import Policies from './pages/Policies'
@@ -33,6 +35,8 @@ function App() {
           <Route path="/car/:plate" element={<CarDetail />} />
           <Route path="/registro" element={<Register />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/politicas" element={<Policies />} />
           <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
           <Route path="/favoritos" element={<RequireAuth><Favorites /></RequireAuth>} />
