@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { FaArrowLeft, FaCarSide, FaCalendarCheck, FaPlus, FaShieldAlt, FaUserCheck, FaUserFriends, FaUsers, FaCogs, FaTag, FaFileContract } from 'react-icons/fa'
+import { FaArrowLeft, FaCarSide, FaCalendarCheck, FaPlus, FaShieldAlt, FaUserFriends, FaUsers, FaCogs, FaTag, FaFileContract } from 'react-icons/fa'
 import AdminOnly from '../components/AdminOnly/AdminOnly'
 
 function Admin() {
@@ -41,13 +41,6 @@ function Admin() {
           >
             <FaPlus className="text-3xl" />
             <span className="text-lg font-semibold">Crear auto</span>
-          </Link>
-          <Link
-            to="/admin/owners"
-            className="flex flex-col items-center justify-center gap-3 px-6 py-10 rounded-lg border-2 border-violet-500 text-violet-500 hover:bg-violet-50 cursor-pointer transition"
-          >
-            <FaUserCheck className="text-3xl" />
-            <span className="text-lg font-semibold">Verificar dueños</span>
           </Link>
           <Link
             to="/empleados"

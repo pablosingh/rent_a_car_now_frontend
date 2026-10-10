@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import Header from './components/Header/Header'
 import Footer from './components/Footer/Footer'
 import RequireAuth from './components/RequireAuth/RequireAuth'
@@ -9,7 +9,6 @@ import Admin from './pages/Admin'
 import AdminCars from './pages/AdminCars'
 import AdminCarEdit from './pages/AdminCarEdit'
 import AdminReservations from './pages/AdminReservations'
-import AdminVerifyOwners from './pages/AdminVerifyOwners'
 import AdminUsers from './pages/AdminUsers'
 import AdminFeatures from './pages/AdminFeatures'
 import AdminCategories from './pages/AdminCategories'
@@ -45,7 +44,7 @@ function App() {
           <Route path="/historial/:userId" element={<RequireAuth roles={['ADMIN']}><ReservationHistory /></RequireAuth>} />
 
           <Route path="/admin" element={<RequireAuth roles={['ADMIN']}><Admin /></RequireAuth>} />
-          <Route path="/admin/owners" element={<RequireAuth roles={['ADMIN']}><AdminVerifyOwners /></RequireAuth>} />
+          <Route path="/admin/owners" element={<Navigate to="/admin/users?pending=1" replace />} />
           <Route path="/admin/users" element={<RequireAuth roles={['ADMIN']}><AdminUsers /></RequireAuth>} />
           <Route path="/admin/features" element={<RequireAuth roles={['ADMIN']}><AdminFeatures /></RequireAuth>} />
           <Route path="/admin/categories" element={<RequireAuth roles={['ADMIN']}><AdminCategories /></RequireAuth>} />
