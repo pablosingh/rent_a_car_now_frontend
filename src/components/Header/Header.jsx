@@ -13,6 +13,10 @@ function Header() {
   const handleSearch = () => {
     const params = new URLSearchParams()
     if (searchText.trim()) params.set('q', searchText.trim())
+    const fromDate = pickupDate || dropoffDate
+    const toDate = dropoffDate || pickupDate
+    if (fromDate) params.set('from', `${fromDate}T00:00:00.000Z`)
+    if (toDate) params.set('to', `${toDate}T23:59:59.999Z`)
     navigate(`/${params.toString() ? '?' + params.toString() : ''}`)
   }
 

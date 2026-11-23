@@ -15,16 +15,19 @@ const buildSearchParam = (q) =>
 const buildFeatureParam = (feature) =>
   feature ? `&feature=${encodeURIComponent(feature)}` : ''
 
-const fetchCarsPage = async (page, category, q, feature) => {
+const buildDateParam = (name, value) =>
+  value ? `&${name}=${encodeURIComponent(value)}` : ''
+
+const fetchCarsPage = async (page, category, q, feature, from, to) => {
   const body = await parseApiResponse(
-    await apiRequest(`/api/cars?page=${page}&size=${PAGE_SIZE}&available=true${buildCategoryParam(category)}${buildSearchParam(q)}${buildFeatureParam(feature)}`)
+    await apiRequest(`/api/cars?page=${page}&size=${PAGE_SIZE}&available=true${buildCategoryParam(category)}${buildSearchParam(q)}${buildFeatureParam(feature)}${buildDateParam('from', from)}${buildDateParam('to', to)}`)
   )
   return body.data
 }
 
-const fetchRandomCars = async (category, q, feature) => {
+const fetchRandomCars = async (category, q, feature, from, to) => {
   const body = await parseApiResponse(
-    await apiRequest(`/api/cars/random?limit=${PAGE_SIZE}&available=true${buildCategoryParam(category)}${buildSearchParam(q)}${buildFeatureParam(feature)}`)
+    await apiRequest(`/api/cars/random?limit=${PAGE_SIZE}&available=true${buildCategoryParam(category)}${buildSearchParam(q)}${buildFeatureParam(feature)}${buildDateParam('from', from)}${buildDateParam('to', to)}`)
   )
   return body.data
 }
@@ -32,6 +35,8 @@ const fetchRandomCars = async (category, q, feature) => {
 function CarGrid() {
   const [searchParams] = useSearchParams()
   const q = searchParams.get('q') || ''
+  const from = searchParams.get('from') || ''
+  const to = searchParams.get('to') || ''
   const [cars, setCars] = useState([])
   const [totalPages, setTotalPages] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
@@ -64,7 +69,7 @@ function CarGrid() {
 
   useEffect(() => {
     let active = true
-    fetchRandomCars(category, q, feature)
+    fetchRandomCars(category, q, feature, from, to)
       .then((data) => {
         if (!active) return
         setCars(data)
@@ -74,7 +79,7 @@ function CarGrid() {
         if (active) setError(err.message)
       })
       .then(() => {
-        if (active) return fetchCarsPage(0, category, q, feature).then((meta) => setTotalPages(meta.totalPages))
+        if (active) return fetchCarsPage(0, category, q, feature, from, to).then((meta) => setTotalPages(meta.totalPages))
       })
       .catch(() => {
         if (active) setTotalPages(0)
@@ -85,7 +90,7 @@ function CarGrid() {
     return () => {
       active = false
     }
-  }, [category, q, feature])
+    }, [category, q, feature, from, to])
 
   const handleGoTo = async (targetPage) => {
     const totalDisplayed = totalPages + 1
@@ -95,9 +100,9 @@ function CarGrid() {
     setError(null)
     try {
       if (targetPage === 1) {
-        setCars(await fetchRandomCars(category, q, feature))
+        setCars(await fetchRandomCars(category, q, feature, from, to))
       } else {
-        const data = await fetchCarsPage(targetPage - 2, category, q, feature)
+        const data = await fetchCarsPage(targetPage - 2, category, q, feature, from, to)
         setCars(data.content)
         setTotalPages(data.totalPages)
       }
@@ -112,13 +117,13 @@ function CarGrid() {
   const handleRetry = () => {
     setLoading(true)
     setError(null)
-    fetchRandomCars(category, q, feature)
+    fetchRandomCars(category, q, feature, from, to)
       .then((data) => {
         setCars(data)
         setCurrentPage(1)
       })
       .catch((err) => setError(err.message))
-      .then(() => fetchCarsPage(0, category, q, feature).then((meta) => setTotalPages(meta.totalPages)))
+      .then(() => fetchCarsPage(0, category, q, feature, from, to).then((meta) => setTotalPages(meta.totalPages)))
       .catch(() => setTotalPages(0))
       .finally(() => setLoading(false))
   }
