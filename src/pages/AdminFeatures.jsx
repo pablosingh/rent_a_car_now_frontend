@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { FaArrowLeft, FaPlus, FaTrash, FaCogs } from 'react-icons/fa'
+import { FaArrowLeft, FaPlus, FaTrash, FaEdit, FaCogs } from 'react-icons/fa'
 import { useAuth } from '../context/AuthContext'
 import { ICON_MAP, ICON_OPTIONS } from '../constants/icons'
 import { parseApiResponse } from '../utils/api'
@@ -14,6 +14,9 @@ function AdminFeatures() {
   const [icon, setIcon] = useState('')
   const [creating, setCreating] = useState(false)
   const [message, setMessage] = useState(null)
+  const [editingId, setEditingId] = useState(null)
+  const [editName, setEditName] = useState('')
+  const [editIcon, setEditIcon] = useState('')
 
   useEffect(() => {
     let active = true
@@ -50,6 +53,27 @@ function AdminFeatures() {
       setMessage({ type: 'error', text: err.message })
     } finally {
       setCreating(false)
+    }
+  }
+
+  const startEdit = (feature) => {
+    setEditingId(feature.id)
+    setEditName(feature.name)
+    setEditIcon(feature.icon || '')
+  }
+
+  const handleUpdate = async (feature) => {
+    if (!editName.trim()) return
+    try {
+      const params = new URLSearchParams({ name: editName.trim() })
+      params.set('icon', editIcon)
+      const res = await authFetch(`/api/features/${feature.id}?${params}`, { method: 'PUT' })
+      const body = await parseApiResponse(res, 'Error al actualizar feature.')
+      setFeatures((prev) => prev.map((f) => (f.id === feature.id ? body.data : f)))
+      setEditingId(null)
+      setMessage({ type: 'success', text: 'Feature actualizada correctamente.' })
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message })
     }
   }
 
@@ -155,22 +179,69 @@ function AdminFeatures() {
               return (
                 <div
                   key={feature.id}
-                  className="flex items-center justify-between px-4 py-3 rounded-lg border border-gray-200 hover:bg-gray-50"
+                  className="flex items-center justify-between px-4 py-3 rounded-lg border border-gray-200 hover:bg-gray-50 gap-2"
                 >
-                  <span className="inline-flex items-center gap-2 text-sm font-medium text-gray-800">
-                    {IconComp && <IconComp className="text-violet-500" />}
-                    {feature.name}
-                    {feature.icon && (
-                      <span className="text-xs text-gray-400">({feature.icon})</span>
-                    )}
-                  </span>
-                  <button
-                    onClick={() => handleDelete(feature)}
-                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer"
-                    title="Borrar"
-                  >
-                    <FaTrash className="text-sm" />
-                  </button>
+                  {editingId === feature.id ? (
+                    <div className="flex flex-1 flex-col sm:flex-row gap-2">
+                      <input
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        placeholder="Nombre"
+                        className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-violet-400"
+                      />
+                      <select
+                        value={editIcon}
+                        onChange={(e) => setEditIcon(e.target.value)}
+                        className="px-2 py-1 text-sm border border-gray-300 rounded bg-gray-50 focus:outline-none focus:ring-1 focus:ring-violet-400 cursor-pointer"
+                      >
+                        <option value="">Sin ícono</option>
+                        {ICON_OPTIONS.map((key) => (
+                          <option key={key} value={key}>
+                            {key}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => handleUpdate(feature)}
+                        disabled={!editName.trim()}
+                        className="px-3 py-1 text-xs font-semibold rounded bg-violet-500 text-white hover:bg-violet-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Guardar
+                      </button>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="px-3 py-1 text-xs font-semibold rounded border border-gray-300 hover:bg-gray-100 cursor-pointer"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="inline-flex items-center gap-2 text-sm font-medium text-gray-800">
+                        {IconComp && <IconComp className="text-violet-500" />}
+                        {feature.name}
+                        {feature.icon && (
+                          <span className="text-xs text-gray-400">({feature.icon})</span>
+                        )}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <button
+                          onClick={() => startEdit(feature)}
+                          className="p-2 text-violet-400 hover:text-violet-600 hover:bg-violet-50 rounded cursor-pointer"
+                          title="Editar"
+                        >
+                          <FaEdit className="text-sm" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(feature)}
+                          className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer"
+                          title="Borrar"
+                        >
+                          <FaTrash className="text-sm" />
+                        </button>
+                      </span>
+                    </>
+                  )}
                 </div>
               )
             })}
