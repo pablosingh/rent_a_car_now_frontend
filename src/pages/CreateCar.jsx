@@ -23,6 +23,7 @@ function CreateCar() {
   const { auth, authFetch } = useAuth()
   const isAdmin = auth?.user?.role === 'ADMIN'
   const [form, setForm] = useState(emptyForm)
+  const [errors, setErrors] = useState({})
   const [images, setImages] = useState([])
   const imagesRef = useRef(images)
   const [loading, setLoading] = useState(false)
@@ -82,6 +83,27 @@ function CreateCar() {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
     setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
+    setErrors((prev) => ({ ...prev, [name]: undefined }))
+  }
+
+  const validate = () => {
+    const e = {}
+    if (!form.plate.trim()) e.plate = 'La patente es obligatoria.'
+    else if (form.plate.trim().length < 6 || form.plate.trim().length > 10) e.plate = 'La patente debe tener entre 6 y 10 caracteres.'
+    if (!form.brand.trim()) e.brand = 'La marca es obligatoria.'
+    if (!form.model.trim()) e.model = 'El modelo es obligatorio.'
+    if (!form.year) e.year = 'El año es obligatorio.'
+    else {
+      const y = Number(form.year)
+      if (!Number.isFinite(y) || y < 2010 || y > 2026) e.year = 'El año debe estar entre 2010 y 2026.'
+    }
+    if (!form.pricePerDay) e.pricePerDay = 'El precio por día es obligatorio.'
+    else if (Number(form.pricePerDay) <= 0) e.pricePerDay = 'Debe ser mayor a 0.'
+    if (!form.pricePerHour) e.pricePerHour = 'El precio por hora es obligatorio.'
+    else if (Number(form.pricePerHour) <= 0) e.pricePerHour = 'Debe ser mayor a 0.'
+    if (!form.category) e.category = 'Seleccioná una categoría.'
+    if (isAdmin && !ownerId) e.ownerId = 'Seleccioná un dueño.'
+    return e
   }
 
   const toggleFeature = (featureId) => {
@@ -129,6 +151,9 @@ function CreateCar() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    const errs = validate()
+    setErrors(errs)
+    if (Object.keys(errs).length) return
     setLoading(true)
     setMessage(null)
 
@@ -204,36 +229,43 @@ function CreateCar() {
         <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Patente</label>
-            <input name="plate" value={form.plate} onChange={handleChange} required className={inputClass} />
+            <input name="plate" value={form.plate} onChange={handleChange} className={`${inputClass} ${errors.plate ? 'border-red-400' : ''}`} />
+            {errors.plate && <p className="text-xs text-red-600 mt-1">{errors.plate}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Marca</label>
-            <input name="brand" value={form.brand} onChange={handleChange} required className={inputClass} />
+            <input name="brand" value={form.brand} onChange={handleChange} className={`${inputClass} ${errors.brand ? 'border-red-400' : ''}`} />
+            {errors.brand && <p className="text-xs text-red-600 mt-1">{errors.brand}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Modelo</label>
-            <input name="model" value={form.model} onChange={handleChange} required className={inputClass} />
+            <input name="model" value={form.model} onChange={handleChange} className={`${inputClass} ${errors.model ? 'border-red-400' : ''}`} />
+            {errors.model && <p className="text-xs text-red-600 mt-1">{errors.model}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Año</label>
-            <input name="year" type="number" value={form.year} onChange={handleChange} required className={inputClass} />
+            <input name="year" type="number" value={form.year} onChange={handleChange} className={`${inputClass} ${errors.year ? 'border-red-400' : ''}`} />
+            {errors.year && <p className="text-xs text-red-600 mt-1">{errors.year}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Precio por día</label>
-            <input name="pricePerDay" type="number" step="0.01" value={form.pricePerDay} onChange={handleChange} required className={inputClass} />
+            <input name="pricePerDay" type="number" step="0.01" value={form.pricePerDay} onChange={handleChange} className={`${inputClass} ${errors.pricePerDay ? 'border-red-400' : ''}`} />
+            {errors.pricePerDay && <p className="text-xs text-red-600 mt-1">{errors.pricePerDay}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Precio por hora</label>
-            <input name="pricePerHour" type="number" step="0.01" value={form.pricePerHour} onChange={handleChange} required className={inputClass} />
+            <input name="pricePerHour" type="number" step="0.01" value={form.pricePerHour} onChange={handleChange} className={`${inputClass} ${errors.pricePerHour ? 'border-red-400' : ''}`} />
+            {errors.pricePerHour && <p className="text-xs text-red-600 mt-1">{errors.pricePerHour}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
-            <select name="category" value={form.category} onChange={handleChange} required className={inputClass}>
+            <select name="category" value={form.category} onChange={handleChange} className={`${inputClass} ${errors.category ? 'border-red-400' : ''}`}>
               <option value="">Seleccioná una categoría</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
             </select>
+            {errors.category && <p className="text-xs text-red-600 mt-1">{errors.category}</p>}
           </div>
           <label className="flex items-center gap-2 col-span-1 sm:col-span-2 text-sm font-medium text-gray-700 cursor-pointer">
             <input
@@ -252,8 +284,7 @@ function CreateCar() {
               <select
                 value={ownerId}
                 onChange={(e) => setOwnerId(e.target.value)}
-                required
-                className={inputClass}
+                className={`${inputClass} ${errors.ownerId ? 'border-red-400' : ''}`}
               >
                 <option value="">Seleccioná un dueño verificado</option>
                 {owners.map((owner) => (
@@ -262,6 +293,7 @@ function CreateCar() {
                   </option>
                 ))}
               </select>
+              {errors.ownerId && <p className="text-xs text-red-600 mt-1">{errors.ownerId}</p>}
             </div>
           )}
 
@@ -337,7 +369,7 @@ function CreateCar() {
           <div className="sm:col-span-2">
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || Object.keys(errors).length > 0}
               className="w-full px-8 py-3 text-lg font-semibold rounded-lg bg-violet-500 text-white hover:bg-violet-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creando...' : 'Crear auto'}
